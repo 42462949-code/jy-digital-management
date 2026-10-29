@@ -274,3 +274,5 @@ html[lang=vi] .lean-step h3{font-size:14px}
 .management-principle.plain-lean .lean-copy p{display:block;font-size:13px;line-height:1.95;color:#78909b;text-align:left;letter-spacing:0;margin:6px 0}
 .management-principle.plain-lean .lean-copy p:last-child{color:#5c7f91}
 @media(max-width:750px){.factory-story .management-principle.plain-lean{padding-top:20px;margin-top:25px}.plain-lean h2{font-size:15px}.management-principle.plain-lean .lean-copy p{font-size:12px;line-height:2}}
+
+.brand .company-logo{display:inline-flex;align-items:center;justify-content:center;width:102px;height:44px;flex:0 0 auto}.brand .company-logo img{display:block;width:100%;height:auto;object-fit:contain}.workspace .brand .company-logo{background:#fff;border-radius:6px;padding:2px 4px;width:89px;height:38px}.workspace .brand{gap:9px}@media(max-width:700px){.workspace .brand .company-logo{width:80px;height:34px}.brand .company-logo{width:94px;height:40px}}
