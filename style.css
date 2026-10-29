@@ -441,3 +441,6 @@ body.mobile-scan .workspace #grid td{font-size:9pt}
 body.mobile-scan .workspace #grid th{height:26px}
 body.mobile-scan .workspace #grid .header-label{padding:0 20px 0 2px;line-height:14px}
 body.mobile-scan .workspace #grid th .funnel{right:1px;bottom:1px}
+
+/* Prevent mobile text autosizing from breaking the proportional landscape view. */
+html.phone-landscape-fit{-webkit-text-size-adjust:100%;text-size-adjust:100%}
