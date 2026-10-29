@@ -369,3 +369,21 @@ html[lang=vi] .lean-step h3{font-size:14px}
 .workspace #grid th .funnel,.workspace #grid th .funnel.active{border:0;background:transparent;box-shadow:none;color:#fff;opacity:1}
 .workspace #grid th .funnel:hover{border:0;background:transparent;box-shadow:none;outline:0;color:#fff}
 .workspace #grid th .funnel:focus-visible{border:0;background:transparent;box-shadow:none;color:#fff;outline:1px dotted #fff;outline-offset:1px}
+
+/* Excel-like anchored column filter, independent of modal dialogs. */
+.excel-filter{position:fixed;z-index:1000;width:286px;max-width:calc(100vw - 16px);max-height:calc(100dvh - 16px);display:flex;flex-direction:column;box-sizing:border-box;padding:6px;border:1px solid #bccbd4;border-radius:5px;background:#fff;color:#435568;box-shadow:0 7px 24px #23384f26;font:12px 'Microsoft YaHei','微软雅黑',sans-serif}
+.excel-filter-name{padding:4px 8px 6px;font-size:11px;color:#8798a8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 0 auto}
+.excel-filter .excel-command{display:flex;align-items:center;gap:10px;flex:0 0 auto;min-height:28px;padding:5px 8px;border:0;border-radius:2px;background:#fff;color:#435568;font-size:12px;text-align:left;box-shadow:none}
+.excel-filter .excel-command>span{width:18px;text-align:center;color:#6990b9;font-size:16px}
+.excel-filter .excel-command:hover:not(:disabled){background:#eaf3fb;color:#345d88}
+.excel-filter .excel-command:disabled{color:#b4bec7;opacity:1;cursor:default}.excel-filter .excel-command:disabled>span{color:#c2cbd2}
+.excel-divider{height:1px;background:#e1e8ee;margin:4px 0;flex:0 0 auto}
+.excel-search{position:relative;flex:0 0 auto;margin:6px 5px}.excel-search input{width:100%;height:29px;border:1px solid #becbd6;border-radius:2px;padding:4px 25px 4px 7px;font-size:12px;background:#fff;color:#435568}.excel-search>span{position:absolute;right:8px;top:4px;color:#8d9ca9;pointer-events:none}
+.excel-filter .excel-select-all{display:flex;align-items:center;gap:7px;padding:4px 9px;height:29px;margin:0;flex:0 0 auto;font-size:12px}.excel-select-all small{margin-left:auto;color:#96a5b1;font-size:10px}
+.excel-filter input[type=checkbox]{margin:0;width:13px;height:13px;accent-color:#548DD4;flex:0 0 auto;cursor:pointer}
+.excel-filter-list{height:208px;min-height:52px;overflow:auto;flex:1 1 208px;margin:0 5px 5px;border:1px solid #e0e7ed;border-radius:2px;overflow-anchor:none;scrollbar-width:thin;scrollbar-color:#c1ceda #f4f7fa}
+.excel-filter .excel-value{display:flex;align-items:center;gap:7px;height:26px;min-height:26px;box-sizing:border-box;margin:0;padding:0 7px;font-size:12px;line-height:26px;cursor:pointer}.excel-value:hover{background:#edf4fb}.excel-value span{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;min-width:0}.excel-no-values{padding:13px 10px;color:#9aa7b3;font-size:12px}
+.excel-filter-footer{display:flex;justify-content:flex-end;align-items:center;gap:7px;padding:7px 5px 3px;border-top:1px solid #e4eaf0;flex:0 0 auto}.excel-filter-footer button{min-width:64px;height:28px;border-radius:3px;padding:4px 12px;font-size:12px;border:1px solid #c6d1db;background:white;color:#5f7387}.excel-filter-footer button.excel-confirm{background:#548DD4;border-color:#548DD4;color:white}.excel-filter-footer button:hover{background:#edf4fa}.excel-filter-footer button.excel-confirm:hover{background:#457ec5}
+
+/* Refine header separators without changing table body gridlines. */
+.workspace #grid th{border-width:1px;border-color:#fff}
