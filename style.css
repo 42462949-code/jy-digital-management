@@ -395,3 +395,38 @@ html[lang=vi] .lean-step h3{font-size:14px}
 /* Temporary table only: Excel-style shrink to fit; source values and all other grids stay unchanged. */
 .workspace #grid .temp-shrink-table tbody tr[data-row] td:not(.check) .celltext{white-space:nowrap!important;overflow-wrap:normal!important;word-break:normal!important;text-overflow:clip!important;max-height:none!important;overflow:visible!important;line-height:18px!important}
 .workspace #grid .temp-shrink-table tbody tr[data-row] td[contenteditable=true] .celltext{font-size:10pt!important;white-space:normal!important;overflow-wrap:anywhere!important}
+
+/* Scan phone mode is activated only for handsets, including landscape orientation. */
+.scan-mobile-actions,.scan-orientation-notice{display:none}
+body.mobile-scan .workspace .topbar,body.mobile-scan .workspace .top-actions{display:none!important}
+body.mobile-scan .workspace{width:100%;max-width:100vw;min-width:0}
+body.mobile-scan .workspace .content.data-content{padding:0;min-width:0}
+body.mobile-scan .scan-panel{min-width:0}
+body.mobile-scan .scan-entry{grid-template-columns:minmax(100px,30%) minmax(0,1fr);gap:8px;padding:8px;padding-top:max(8px,env(safe-area-inset-top));border-top:0}
+body.mobile-scan .scan-camera{height:100%;min-height:176px;max-height:250px}
+body.mobile-scan .scan-camera video{position:absolute;inset:0}
+body.mobile-scan .scan-viewfinder{inset:28% 8px;border-radius:9px}
+body.mobile-scan .scan-context{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+body.mobile-scan .scan-context label{font-size:12px;gap:3px}
+body.mobile-scan .scan-context input{font-size:16px;height:34px;padding:4px;max-width:100%;-webkit-appearance:none;appearance:none}
+body.mobile-scan .scan-form{gap:6px}
+body.mobile-scan .scan-manual textarea{font-size:16px;height:35px;min-height:35px;padding:6px}
+body.mobile-scan .scan-manual button{padding:4px 8px;font-size:12px}
+body.mobile-scan .scan-status{font-size:12px;line-height:1.45}
+body.mobile-scan .scan-small{font-size:11px;line-height:1.5}
+body.mobile-scan .scan-small #scanLastCode,body.mobile-scan .scan-export-hint{display:none}
+body.mobile-scan .scan-mobile-actions{display:block;flex:0 0 auto;border-bottom:1px solid #e4edeb;background:#fff}
+body.mobile-scan .scan-mobile-actions .actions{display:flex;gap:8px;flex-wrap:nowrap;padding:7px 8px;min-height:0}
+body.mobile-scan .scan-mobile-actions .actions button{flex:1;min-width:0;height:36px;padding:6px 4px;font-size:12px;white-space:nowrap}
+body.mobile-scan .scan-mobile-actions .scan-desktop-action,body.mobile-scan .scan-mobile-actions .spacer{display:none!important}
+body.mobile-scan .scan-panel .filters{grid-template-columns:repeat(2,minmax(0,1fr)) auto auto;gap:5px;padding:6px}
+body.mobile-scan .scan-panel .filters .filter:nth-child(3),body.mobile-scan .scan-panel .filters .filter:nth-child(4){display:none}
+body.mobile-scan .scan-panel .filters>.primary{grid-row:1;grid-column:3}
+body.mobile-scan .scan-panel .reset-query{grid-row:1;grid-column:4}
+body.mobile-scan .scan-panel .filter select{width:45%;padding-left:5px;padding-right:0;font-size:11px}
+body.mobile-scan .scan-panel .filter input{padding:6px 4px;font-size:16px;min-width:0}
+body.mobile-scan-landscape .workspace,body.mobile-scan-landscape #modal{visibility:hidden;pointer-events:none}
+body.mobile-scan-landscape .scan-orientation-notice:not([hidden]){position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:20px;background:#f6faf9;color:#315f53;text-align:center}
+.scan-orientation-notice strong{font-size:20px;font-weight:500}.scan-orientation-notice p{font-size:14px;margin:0;color:#708e83}.scan-rotate-phone{width:46px;height:70px;display:grid;place-items:center;border:3px solid #6eaa98;border-radius:10px;font-size:30px;color:#578b7c}
+body.mobile-scan #modal{max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);overflow:auto}
+body.mobile-scan #modal input{font-size:16px}
