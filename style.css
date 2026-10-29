@@ -471,3 +471,36 @@ body.mobile-scan .scan-mobile-tools{display:flex;grid-column:1/-1;flex-direction
 body.mobile-scan .scan-mobile-tools .scan-manual{min-width:0}
 body.mobile-scan .scan-mobile-tools .scan-mobile-actions .actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
 body.mobile-scan .scan-mobile-tools .scan-mobile-actions .actions button{height:28px;min-width:0;font-size:11px;padding:3px 2px}
+
+/* Match phone form typography to the 9pt scan table body. */
+.scan-confirm-slot{display:none}
+body.mobile-scan .scan-context label,body.mobile-scan .scan-context input{font-family:'Microsoft YaHei','微软雅黑',sans-serif;font-size:9pt;font-weight:400}
+body.mobile-scan .scan-confirm-slot{display:flex;justify-content:center;margin-top:8px}
+body.mobile-scan #scanSubmit{display:block;width:72px;max-width:100%;height:auto;aspect-ratio:1;min-height:0;flex:none;padding:6px;border-radius:8px;background:#4b9b72;border:1px solid #4b9b72;color:#fff;font-size:14px;line-height:1.4;overflow-wrap:anywhere;white-space:normal}
+body.mobile-scan #scanSubmit:hover:not(:disabled){background:#3d8962;border-color:#3d8962}
+body.mobile-scan #scanSubmit:focus-visible{outline:2px solid #26734c;outline-offset:2px}
+body.mobile-scan #modal.phone-column-settings{padding:16px}
+body.mobile-scan .phone-column-settings>p{font-size:12px;line-height:1.6}
+body.mobile-scan .phone-column-settings .column-list{max-height:52dvh;overflow:auto;min-width:0}
+body.mobile-scan .phone-column-row{padding:10px;border-bottom:1px solid #e4edeb}
+body.mobile-scan .phone-column-row:last-child{border-bottom:0}
+body.mobile-scan .phone-column-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+body.mobile-scan .phone-column-title .column-name{font-size:13px;color:#48665a}
+body.mobile-scan .phone-column-controls{display:grid;grid-template-columns:52px minmax(70px,1fr) minmax(70px,1fr);gap:10px;align-items:end}
+body.mobile-scan .phone-column-controls label{font-size:11px;color:#7c9188;margin:0;display:flex;flex-direction:column;gap:5px;min-width:0}
+body.mobile-scan .phone-column-controls input.column-width,body.mobile-scan .phone-column-controls select.column-align{height:34px;font-size:16px;padding:4px;width:100%;min-width:0}
+body.mobile-scan .phone-column-controls .phone-column-visible{align-items:center;justify-content:space-between;min-height:53px}
+body.mobile-scan .phone-column-visible input{width:18px;height:18px;margin:7px 0;accent-color:#4b9b72}
+body.mobile-scan .phone-column-settings .column-move button{min-width:34px;min-height:32px;padding:3px 8px}
+/* Raised surfaces, clear hover, focused and pressed states for buttons. */
+:is(#app,#modal,.excel-filter) button:not(.funnel){box-shadow:inset 0 1px 0 #ffffffc9,inset 0 -1px 0 #294a5b18,0 2px 0 #8fa3ae70,0 4px 8px #27475614;transition:transform .12s ease,box-shadow .12s ease,filter .12s ease,outline-color .12s ease}
+:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):hover{transform:translateY(-1px);filter:brightness(1.045);box-shadow:inset 0 1px 0 #ffffffdd,inset 0 -1px 0 #294a5b22,0 3px 0 #839aa680,0 6px 12px #27475624}
+:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):focus{outline:2px solid #6b9ccd;outline-offset:2px;box-shadow:inset 0 1px 0 #ffffffc9,0 2px 0 #7e98a780,0 0 0 3px #6b9ccd20}
+:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):active{transform:translateY(1px);filter:brightness(.94);box-shadow:inset 0 2px 5px #183d4938,0 1px 0 #ffffffa6}
+:is(#app,#modal,.excel-filter) button:not(.funnel):disabled{transform:none;filter:saturate(.65);box-shadow:inset 0 1px 0 #ffffff80,0 1px 1px #27475612;cursor:not-allowed}
+.workspace #grid th .funnel{filter:drop-shadow(0 1px 1px #1e497c66);transition:transform .12s,filter .12s}
+.workspace #grid th .funnel:hover{transform:translateY(-1px);filter:drop-shadow(0 2px 1px #153966a6);text-shadow:0 0 3px #fff8}
+.workspace #grid th .funnel:focus{outline:1px dotted #fff;outline-offset:0}
+.workspace #grid th .funnel:active{transform:translateY(1px);filter:brightness(.85);text-shadow:none}
+body.mobile-scan #modal.columns-dialog{padding:16px}
+@media(prefers-reduced-motion:reduce){:is(#app,#modal,.excel-filter) button:not(.funnel),.workspace #grid th .funnel{transition:none}:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):hover,:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):active,.workspace #grid th .funnel:hover,.workspace #grid th .funnel:active{transform:none}}
