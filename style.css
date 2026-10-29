@@ -616,3 +616,14 @@ html.phone-device .workspace .desktop-data-action{display:none!important}
 html.phone-device .workspace #topActions .actions{justify-content:flex-start;flex-wrap:wrap;min-height:0}
 html.phone-device .workspace #topActions .actions>.spacer{display:none!important}
 html.phone-device .workspace #topActions .actions>button{margin-left:0;margin-right:0}
+
+/* Sales order scope controls share the toolbar and wrap with visible actions. */
+.workspace .sales-order-options{display:flex;align-items:center;flex-wrap:wrap;gap:7px 15px;margin-left:12px;padding:5px 0;min-width:0}
+.workspace .sales-order-options label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:12px;line-height:22px;color:#557580;cursor:pointer}
+.workspace .sales-order-options input{width:14px;height:14px;margin:0;padding:0;accent-color:#528d91;cursor:pointer;flex:0 0 auto}
+.workspace .sales-order-options label:hover{color:#285f75}
+.workspace .sales-order-options input:focus-visible{outline:2px solid #478bd2;outline-offset:3px}
+html.phone-device .workspace .sales-order-options{margin-left:0;gap:5px 12px}
+
+/* Keep an applied column filter visible until that filter is cleared. */
+.workspace #grid th.column-filtered .header-label{color:#fff16b}
