@@ -1,0 +1,28 @@
+services:
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      JY_ADMIN_USER: ${JY_ADMIN_USER:-admin}
+      JY_ADMIN_PASSWORD: ${JY_ADMIN_PASSWORD:?Set a server password of at least 8 characters}
+      JY_ALLOWED_ORIGINS: https://42462949-code.github.io
+    volumes:
+      - reports:/data
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      JY_API_DOMAIN: ${JY_API_DOMAIN:?Set the API domain}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+volumes:
+  reports:
+  caddy_data:
+  caddy_config:

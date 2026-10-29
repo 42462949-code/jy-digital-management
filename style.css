@@ -453,3 +453,21 @@ body.mobile-scan .scan-context{grid-template-columns:minmax(0,1fr)}
 body.mobile-scan .scan-context .scan-date-field{display:none}
 body.mobile-scan .scan-mobile-actions .actions{flex-direction:column;align-items:stretch}
 body.mobile-scan .scan-mobile-actions .actions button{flex:0 0 28px;width:100%}
+
+.scan-clear-options{flex-wrap:wrap;gap:8px}
+body.mobile-scan .scan-clear-options button{padding:8px 10px;font-size:13px}
+.workspace #grid tr[data-submitted=true] td{background:#f2f8f4}
+
+/* Show only the enlarged square viewfinder on phones. */
+.scan-mobile-tools{display:none}
+body.mobile-scan .scan-entry{grid-template-columns:minmax(0,3fr) minmax(0,1fr);gap:8px}
+body.mobile-scan .scan-camera{aspect-ratio:1;min-height:0;max-height:none}
+body.mobile-scan .scan-camera video{object-fit:cover;object-position:center}
+body.mobile-scan .scan-viewfinder{inset:0;border-radius:8px}
+body.mobile-scan .scan-context{gap:7px}
+body.mobile-scan .scan-context label{font-size:11px}
+body.mobile-scan .scan-context input{padding:4px 3px;font-size:16px}
+body.mobile-scan .scan-mobile-tools{display:flex;grid-column:1/-1;flex-direction:column;gap:7px;min-width:0}
+body.mobile-scan .scan-mobile-tools .scan-manual{min-width:0}
+body.mobile-scan .scan-mobile-tools .scan-mobile-actions .actions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+body.mobile-scan .scan-mobile-tools .scan-mobile-actions .actions button{height:28px;min-width:0;font-size:11px;padding:3px 2px}
