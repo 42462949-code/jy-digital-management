@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="882" height="114" viewBox="0 0 882 114" role="img" aria-label="佳洋 Jiayang 佳洋实业（香港）有限公司">
+<defs><clipPath id="stripes"><path d="M16 66H91L130 101H58Z"/></clipPath></defs>
+<path fill="#2455b5" d="M85 18H133L91 65H16L31 48H53L46 55H76L99 29H75Z"/>
+<g clip-path="url(#stripes)" stroke="#7b328c" stroke-width="1.5"><path d="M10 67H135M10 70H135M10 73H135M10 76H135M10 79H135M10 82H135M10 85H135M10 88H135M10 91H135M10 94H135M10 97H135M10 100H135"/></g>
+<path fill="white" d="M35 75H74L83 83H44Z"/>
+<text x="144" y="60" fill="#111" font-family="Microsoft YaHei,PingFang SC,Noto Sans CJK SC,sans-serif" font-size="29" letter-spacing="16">佳 洋</text>
+<text x="135" y="91" fill="#080808" font-family="Arial,sans-serif" font-size="28" font-style="italic" font-weight="700">Jiayang</text>
+<text x="280" y="80" fill="#151515" font-family="Microsoft YaHei,PingFang SC,Noto Sans CJK SC,sans-serif" font-size="45" font-weight="800">佳洋实业（香港）有限公司</text>
+</svg>
