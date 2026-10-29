@@ -538,7 +538,7 @@ html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.ta
 body.mobile-scan .workspace #grid th.check input{margin:0;width:12px;height:12px;vertical-align:middle}
 
 /* Put arrow glyphs closer to the lower-right corner, without adding a border. */
-.workspace #grid th .funnel,body.mobile-scan .workspace #grid th .funnel{right:0;bottom:-1px}
+.workspace #grid th .funnel,body.mobile-scan .workspace #grid th .funnel{right:-2px;bottom:-3px}
 .phone-landscape-control[hidden]{display:none!important}
 html.phone-device .workspace-controls .phone-landscape-control{font-size:11px;padding:5px 8px;color:#507565;border-color:#d5e4dc}
 
