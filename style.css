@@ -430,3 +430,14 @@ body.mobile-scan-landscape .scan-orientation-notice:not([hidden]){position:fixed
 .scan-orientation-notice strong{font-size:20px;font-weight:500}.scan-orientation-notice p{font-size:14px;margin:0;color:#708e83}.scan-rotate-phone{width:46px;height:70px;display:grid;place-items:center;border:3px solid #6eaa98;border-radius:10px;font-size:30px;color:#578b7c}
 body.mobile-scan #modal{max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);overflow:auto}
 body.mobile-scan #modal input{font-size:16px}
+
+/* Compact phone scan entry: controls beside the camera, results immediately below. */
+body.mobile-scan .scan-form .scan-status,body.mobile-scan .scan-form .scan-small,body.mobile-scan .scan-panel .filters{display:none!important}
+body.mobile-scan .scan-camera{min-height:148px;max-height:200px}
+body.mobile-scan .scan-mobile-actions{border:0;background:transparent}
+body.mobile-scan .scan-mobile-actions .actions{gap:5px;padding:0;min-height:0}
+body.mobile-scan .scan-mobile-actions .actions button{height:28px;min-height:28px;padding:3px 2px;font-size:11px;line-height:18px;border-radius:5px}
+body.mobile-scan .workspace #grid td{font-size:9pt}
+body.mobile-scan .workspace #grid th{height:26px}
+body.mobile-scan .workspace #grid .header-label{padding:0 20px 0 2px;line-height:14px}
+body.mobile-scan .workspace #grid th .funnel{right:1px;bottom:1px}
