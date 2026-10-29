@@ -276,3 +276,69 @@ html[lang=vi] .lean-step h3{font-size:14px}
 @media(max-width:750px){.factory-story .management-principle.plain-lean{padding-top:20px;margin-top:25px}.plain-lean h2{font-size:15px}.management-principle.plain-lean .lean-copy p{font-size:12px;line-height:2}}
 
 .brand .company-logo{display:inline-flex;align-items:center;justify-content:center;width:102px;height:44px;flex:0 0 auto}.brand .company-logo img{display:block;width:100%;height:auto;object-fit:contain}.workspace .brand .company-logo{background:#fff;border-radius:6px;padding:2px 4px;width:89px;height:38px}.workspace .brand{gap:9px}@media(max-width:700px){.workspace .brand .company-logo{width:80px;height:34px}.brand .company-logo{width:94px;height:40px}}
+
+#modal.columns-dialog{width:min(800px,96vw);max-width:96vw;padding:25px}.column-settings h3{margin-bottom:10px}.column-settings>p{margin-top:0;margin-bottom:15px}.column-list{max-height:55vh;overflow:auto;border:1px solid #e5ebf3;border-radius:7px}.column-option-head,.column-option-row{display:grid;grid-template-columns:minmax(145px,1fr) 78px 96px 100px 78px;align-items:center;gap:12px;min-width:610px;padding:10px 14px}.column-option-head{position:sticky;top:0;background:#f3f6fb;color:#7f8da2;font-size:12px;z-index:1;text-align:center}.column-option-head>span:first-child{text-align:left}.column-option-row{border-top:1px solid #edf1f6;font-size:13px}.column-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#50637d}.column-settings .column-visible{display:flex;justify-content:center;align-items:center;margin:0}.column-visible input{width:15px;height:15px;accent-color:#3067df;cursor:pointer}.column-settings .column-width{width:100%;padding:7px 8px;font-size:12px;text-align:center}.column-align{width:100%;padding:7px;font-size:12px}.column-move{display:flex;gap:5px;justify-content:center}.column-move button{padding:4px 9px;line-height:22px}.column-settings .column-help{font-size:11px;margin:12px 0 0;line-height:1.7}.column-settings .dialogfoot{margin-top:18px}.workspace th{text-align:center!important}@media(max-width:700px){#modal.columns-dialog{padding:17px}.column-option-head,.column-option-row{padding:9px 10px;gap:10px;grid-template-columns:155px 70px 88px 90px 75px;min-width:548px}.column-list{max-height:58vh}}
+
+/* A lighter workspace for long days: porcelain, soft blue and sage. */
+.workspace{background:radial-gradient(ellipse at 90% 0,#eaf4f366,transparent 50%),#f4f7f6;color:#40576a}
+.workspace .topbar{background:#fff;box-shadow:0 2px 12px #3c5d6c08;color:#3c5164;height:66px;border-bottom:1px solid #e3eceb}
+.workspace .topbar:after{height:1px;background:linear-gradient(90deg,#a3c4eb55,#aad3c55c 55%,transparent)}
+.workspace .brand{font-size:15px;color:#364e64;font-weight:600;letter-spacing:.2px}
+.workspace .brand .company-logo{box-shadow:none;border:1px solid #edf1f3;background:#fff}
+.workspace #topTabs .table-tabs{background:transparent;gap:3px;align-items:center;scrollbar-color:#c6d9d5 transparent}
+.workspace #topTabs .table-tabs button{height:38px;min-height:38px;border-radius:7px;padding:0 12px;font-size:12px;line-height:1.5;color:#81939e;background:transparent;font-weight:400;transition:background .15s,color .15s}
+.workspace #topTabs .table-tabs button:hover{color:#527d88;background:#f3f7f7}
+.workspace #topTabs .table-tabs button.active{background:#eaf3f1;color:#4c887e;font-weight:600}
+.workspace #topTabs .table-tabs button:after{display:none}
+.workspace-controls>button{border-color:#e0e9e8;background:#fff;color:#81939f;box-shadow:none;border-radius:6px}
+.workspace-controls>button:hover{border-color:#c7ddda;background:#f3f8f6;color:#4e867b}
+.workspace-controls .language-toggle{color:#bdc9ce}
+.workspace-controls .language-toggle button{color:#91a1aa;font-weight:400}
+.workspace-controls .language-toggle button.active,.workspace-controls .language-toggle button:hover{color:#5484b3;background:transparent;font-weight:600}
+.workspace .user-chip{color:#8b9ba5;border-left-color:#e5ecee}
+.workspace .user-avatar{border:1px solid #e0ece7;background:#f0f6f3;color:#78a094}
+.workspace .top-actions{background:#fff;border-bottom:1px solid #e5edeb}
+.workspace .top-actions .actions{background:#fff;min-height:58px;padding:11px 18px;gap:9px}
+.workspace .actions button{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:34px;border-radius:6px;padding:7px 12px;background:#fff;border:1px solid #e0e8e9;color:#81909f;font-size:12px;box-shadow:0 1px 2px #536f7603;transition:background .15s,border-color .15s,color .15s}
+.workspace .actions button:hover{background:#f5f9f8;border-color:#c8dcd7;color:#557e7a}
+.workspace .actions button.primary{background:#698dcc;border-color:#698dcc;color:#fff;box-shadow:0 3px 7px #698dcc17}
+.workspace .actions button.primary:hover{background:#567fc2;border-color:#567fc2;color:#fff}
+.workspace .actions button.danger{background:#fff;border-color:#efdfdf;color:#c68d90}
+.workspace .actions button.danger:hover{background:#fdf5f5;border-color:#e7c8ca;color:#b9797e}
+.action-icon{flex-shrink:0;opacity:.85}
+.workspace .selection-count{background:#f1f5f4;color:#94a69f;font-size:11px;border-radius:5px;padding:5px 10px}
+.workspace .content{padding:16px 18px 12px}
+.workspace .business-panel{border:1px solid #e1ebe8;box-shadow:0 4px 18px #3a6a5f05;border-radius:10px;background:#fff}
+.workspace .filter-title{padding:16px 19px 0;color:#66838a;font-size:12px;font-weight:600;background:#fff}
+.workspace .filter-title>button{color:#9cacae!important;font-weight:400}
+.workspace .filters{padding:12px 19px 20px;gap:16px;border-bottom:1px solid #e4edeb;background:#fff}
+.workspace .filter label{font-size:11px;color:#a0afb1;letter-spacing:.3px;margin-bottom:7px}
+.workspace .filter .pair{height:35px;border-color:#e1eae8;border-radius:6px;box-shadow:0 1px 3px #4d6d6203}
+.workspace .filter .pair:focus-within{border-color:#a8cfc3;box-shadow:0 0 0 3px #6bab8e09}
+.workspace .filter select{height:33px;background:#f6f9f8;border-right-color:#e3ece9;color:#82989b}
+.workspace .filter input{height:33px;color:#70858c}
+.workspace .filter input::placeholder{color:#b1bfc1}
+.workspace .filters>.primary{height:35px;background:#70a497;border-color:#70a497;color:#fff;box-shadow:0 3px 7px #70a49715;padding:8px 16px}
+.workspace .filters>.primary:hover{background:#5d9588;border-color:#5d9588}
+.workspace th,.workspace .sales-workbook-table th{background:linear-gradient(#eff5f5,#eaf1f3);color:#68828b;border-color:#dce7e9;font-weight:500;box-shadow:inset 0 -1px #dbe7e9;height:46px;font-size:9pt;text-align:center}
+.workspace th .funnel,.workspace .sales-workbook-table th .funnel{color:#a3b8b7}
+.workspace td,.workspace .sales-workbook-table td{color:#73858f;border-color:#e8efef;background:#fff;height:35px;padding:0;font-size:9pt}
+.workspace tr:nth-child(even) td{background:#f8fbfa}
+.workspace tr:hover td{background:#f0f7f3}
+.workspace tr:has(.check input:checked) td{background:#eaf4ee}
+.workspace td:nth-child(2){color:#6c9c90}
+.workspace .check input{accent-color:#78a998}
+.workspace td:focus{outline-color:#83afc3}
+.workspace .resizer:hover{background:#9ebfb9aa}
+.workspace .tablewrap{scrollbar-color:#c9dcd5 #f6faf7;background:#fff}
+.workspace .tablefoot{background:#fff;border-top-color:#e5edeb;color:#a2b3b6;padding:12px 18px;font-size:11px}
+.workspace .pagebtn{border-color:#e7eeec;background:#fff;color:#a0b1b4;box-shadow:none}
+.workspace .tablefoot button.primary{background:#7ca79e;border-color:#7ca79e;color:#fff}
+.workspace .note{color:#acbcbb;font-size:10px;letter-spacing:.2px;line-height:1.8;margin-top:11px}
+.workspace .card,.workspace .chartgrid .panel{border-color:#e1ebe8;box-shadow:0 3px 12px #46685303}
+.workspace .card b{color:#57767d}.workspace .card em{background:#eff7f2;color:#8bab9c}
+@media(max-width:1250px){.workspace .topbar{height:auto;min-height:62px;padding-top:10px}.workspace #topTabs{margin-top:9px;height:46px}.workspace #topTabs .table-tabs button{height:35px;min-height:35px}.workspace #topTabs .table-tabs{gap:5px}}
+@media(max-width:700px){.workspace .top-actions .actions{min-height:52px;padding:10px 12px;gap:7px}.workspace .actions button{font-size:11px;height:32px;padding:6px 10px}.workspace .content{padding:10px 8px}.workspace .filter-title{padding:13px 13px 0}.workspace .filters{padding:11px 13px 15px;gap:9px}.workspace .brand{font-size:14px}.workspace .note{font-size:9px;letter-spacing:0}.workspace-controls>button{font-size:10px}.workspace .tablefoot{padding:10px 12px}}
+
+/* Keep the calm palette legible at compact table sizes. */
+.workspace #topTabs .table-tabs button{color:#667e89}.workspace .actions button{color:#687f8d}.workspace-controls>button{color:#6b818e}.workspace .filter select{color:#6b828a}.workspace .filter input{color:#627b84}.workspace th,.workspace .sales-workbook-table th{color:#4e6c79}.workspace td,.workspace .sales-workbook-table td{color:#627782}.workspace td:nth-child(2){color:#578779}.workspace .filter label{color:#7d9399}
