@@ -611,3 +611,8 @@ html.phone-device .workspace .desktop-data-action{display:none!important}
 #modal .login-card .dialogfoot .primary:active{background:#154b95}
 @media(max-width:420px){#modal.login-dialog{padding:26px 22px 22px}.login-card .login-brand h2{font-size:23px}.login-card .company-logo{width:96px;height:40px}}
 @media(max-width:360px){#modal.login-dialog{padding:24px 18px 20px}.login-card .login-brand h2{font-size:21px;letter-spacing:.5px}.login-card .login-options{gap:6px}.login-card .login-options .muted{font-size:10px}}
+
+/* Phone toolbars pack visible actions together after desktop-only actions are hidden. */
+html.phone-device .workspace #topActions .actions{justify-content:flex-start;flex-wrap:wrap;min-height:0}
+html.phone-device .workspace #topActions .actions>.spacer{display:none!important}
+html.phone-device .workspace #topActions .actions>button{margin-left:0;margin-right:0}
