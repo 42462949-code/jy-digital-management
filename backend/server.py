@@ -42,6 +42,8 @@ def initialize():
         con.execute('CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, payload TEXT NOT NULL, signature TEXT NOT NULL, username TEXT NOT NULL, received_at TEXT NOT NULL)')
         if 'unit' not in {column[1] for column in con.execute('PRAGMA table_info(reports)')}:
             con.execute("ALTER TABLE reports ADD COLUMN unit TEXT NOT NULL DEFAULT ''")
+        con.execute('CREATE TABLE IF NOT EXISTS checkpoints (id TEXT PRIMARY KEY, device_id TEXT NOT NULL, username TEXT NOT NULL, total_parts INTEGER NOT NULL, created_at TEXT NOT NULL, completed_at TEXT)')
+        con.execute('CREATE TABLE IF NOT EXISTS checkpoint_parts (checkpoint_id TEXT NOT NULL REFERENCES checkpoints(id), part_index INTEGER NOT NULL, signature TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(checkpoint_id,part_index))')
         con.execute('CREATE TABLE IF NOT EXISTS batches (id TEXT PRIMARY KEY, signature TEXT NOT NULL, response TEXT NOT NULL)')
         con.execute('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
         fingerprint = hashlib.sha256((USER+'\0'+PASSWORD).encode()).hexdigest()
@@ -147,12 +149,63 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError('请求格式错误')
         return data
 
+    def checkpoint(self, username, body):
+        checkpoint,device = body.get('checkpointId'),body.get('deviceId')
+        part,total = body.get('partIndex'),body.get('totalParts')
+        if not isinstance(checkpoint,str) or not ID.fullmatch(checkpoint) or not isinstance(device,str) or not ID.fullmatch(device):
+            raise ValueError('保存标识无效')
+        if type(part) is not int or type(total) is not int or not 0 <= part < total <= 1000:
+            raise ValueError('保存分片无效')
+        original = body.get('records')
+        records = [] if original == [] else validate(original)
+        for record,source in zip(records,original):
+            state = source.get('reviewStatus','草稿')
+            submitted = source.get('submittedAt')
+            if state not in ('草稿','已确认') or (submitted is not None and (not isinstance(submitted,str) or len(submitted)>80)):
+                raise ValueError('状态无效')
+            record.update(reviewStatus=state,submittedAt=submitted)
+        now = dt.datetime.now(dt.timezone.utc).isoformat()
+        signature = digest(records)
+        with connect() as con:
+            con.execute('BEGIN IMMEDIATE')
+            prior = con.execute('SELECT device_id,username,total_parts,completed_at FROM checkpoints WHERE id=?',(checkpoint,)).fetchone()
+            if prior and prior[:3] != (device,username,total):
+                con.rollback()
+                return self.reply(409, {'error':'保存批次不匹配'})
+            if not prior:
+                con.execute('INSERT INTO checkpoints VALUES (?,?,?,?,?,NULL)',(checkpoint,device,username,total,now))
+            previous = con.execute('SELECT signature FROM checkpoint_parts WHERE checkpoint_id=? AND part_index=?',(checkpoint,part)).fetchone()
+            if previous and previous[0] != signature:
+                con.rollback()
+                return self.reply(409, {'error':'保存分片已改变，请重试退出'})
+            if not previous:
+                con.execute('INSERT INTO checkpoint_parts VALUES (?,?,?,?)',(checkpoint,part,signature,canonical(records)))
+            complete = con.execute('SELECT COUNT(*) FROM checkpoint_parts WHERE checkpoint_id=?',(checkpoint,)).fetchone()[0] == total
+            saved_at = (prior[3] if prior else None) or now
+            if complete:
+                con.execute('UPDATE checkpoints SET completed_at=? WHERE id=?',(saved_at,checkpoint))
+        return self.reply(200, {'checkpointId':checkpoint,'partIndex':part,'acceptedIds':[r['id'] for r in records],'complete':complete,'savedAt':saved_at if complete else None})
+
+    def latest_checkpoint(self, username, parsed):
+        device = parse_qs(parsed.query).get('deviceId',[''])[0]
+        if not ID.fullmatch(device):
+            return self.reply(400, {'error':'设备标识无效'})
+        with connect() as con:
+            snapshot = con.execute('SELECT id,completed_at FROM checkpoints WHERE device_id=? AND username=? AND completed_at IS NOT NULL ORDER BY completed_at DESC,id DESC LIMIT 1',(device,username)).fetchone()
+            if not snapshot:
+                return self.reply(404, {'error':'暂无已完成的退出保存'})
+            parts = con.execute('SELECT payload FROM checkpoint_parts WHERE checkpoint_id=? ORDER BY part_index',(snapshot[0],)).fetchall()
+        return self.reply(200, {'checkpointId':snapshot[0],'savedAt':snapshot[1],'records':[r for part in parts for r in json.loads(part[0])]})
+
     def do_GET(self):
         if not self.origin_allowed():
             return self.reply(403, {'error':'不允许此来源'})
         parsed = urlparse(self.path)
         if parsed.path == '/api/health':
             return self.reply(200, {'ok':True})
+        if parsed.path == '/api/scan-checkpoints/latest':
+            user = self.user()
+            return self.latest_checkpoint(user,parsed) if user else self.reply(401, {'error':'请登录报工后台'})
         if parsed.path != '/api/scan-reports':
             return self.reply(404, {'error':'接口不存在'})
         if not self.user():
@@ -172,7 +225,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.origin_allowed():
             return self.reply(403, {'error':'不允许此来源'})
         path = urlparse(self.path).path
-        if path not in ['/api/login','/api/scan-reports']:
+        if path not in ['/api/login','/api/scan-reports','/api/scan-checkpoints']:
             return self.reply(404, {'error':'接口不存在'})
         try:
             body = self.read_body()
@@ -199,6 +252,8 @@ class Handler(BaseHTTPRequestHandler):
             username = self.user()
             if not username:
                 return self.reply(401, {'error':'请登录报工后台'})
+            if path == '/api/scan-checkpoints':
+                return self.checkpoint(username,body)
             batch = body.get('batchId')
             if not isinstance(batch,str) or not ID.fullmatch(batch):
                 raise ValueError('批次标识无效')

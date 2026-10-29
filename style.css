@@ -509,3 +509,30 @@ body.mobile-scan #modal.columns-dialog{padding:16px}
 .workspace #grid .scan-review-status{width:100%;min-width:0;height:30px;padding:3px 4px;border:0;border-radius:0;background:transparent;font:inherit;text-align:inherit;color:inherit;cursor:pointer}
 .workspace #grid .scan-review-status:focus{outline:1px solid #548dd4;outline-offset:-1px;background:#f1f6ff}
 .workspace #grid .scan-review-status:disabled{opacity:1;color:#4f876d;cursor:default}
+
+/* Compact phone scan heading and exit control. Desktop keeps its existing toolbar. */
+.scan-phone-heading{display:none}
+body.mobile-scan .scan-phone-heading{display:grid;grid-template-columns:62px minmax(0,1fr) 62px;align-items:center;flex:0 0 auto;min-height:40px;padding:4px 8px;background:linear-gradient(180deg,#fff,#f5faf7);border-bottom:1px solid #dce9e2}
+body.mobile-scan .scan-phone-heading h2{grid-column:2;margin:0;text-align:center;white-space:nowrap;font-size:15px;line-height:28px;font-weight:500;color:#315f4d;letter-spacing:.5px}
+body.mobile-scan .scan-phone-heading button{grid-column:3;min-height:28px;padding:4px 10px;justify-self:end;font-size:12px;color:#527664;border-color:#d3e1d8;background:#fff}
+body.mobile-scan .scan-manual textarea,body.mobile-scan .scan-manual button{font-family:'Microsoft YaHei','微软雅黑',sans-serif;font-size:9pt;font-weight:400}
+body.mobile-scan .workspace #grid th{height:18px}
+body.mobile-scan .workspace #grid .header-label{line-height:14px;padding-top:0;padding-bottom:0}
+body.mobile-scan .workspace #grid th .funnel{width:18px;height:16px;font-size:16px;line-height:14px;bottom:0}
+
+/* Fill the usable browser height even in WebViews without :has() or dvh support. */
+.main.workspace.table-page{height:100vh;height:var(--jy-app-height,100vh);min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.workspace.table-page .content.data-content{flex:1 1 0%;min-height:0}
+.workspace.table-page .data-content .business-panel{flex:1 1 0%;min-height:0;width:100%}
+.workspace.table-page .data-content #grid{flex:1 1 0%;height:auto;min-height:0;max-height:none;overflow:auto;padding-bottom:env(safe-area-inset-bottom,0px)}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters{grid-template-columns:repeat(2,minmax(0,1fr)) 48px;gap:6px;padding:6px}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.filter:nth-child(1){grid-column:1;grid-row:1}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.filter:nth-child(2){grid-column:2;grid-row:1}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.filter:nth-child(3){grid-column:1;grid-row:2}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.filter:nth-child(4){grid-column:2;grid-row:2}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.primary{grid-column:3;grid-row:1;min-width:0;width:48px;padding:4px;font-size:11px}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filters>.reset-query{grid-column:3;grid-row:2;min-width:0;width:48px;padding:4px;font-size:11px}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filter .pair{display:flex;flex-wrap:nowrap}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filter select{width:45%;font-size:11px;padding-left:4px;padding-right:0}
+html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filter input{width:55%;font-size:12px;padding:6px 4px}
+body.mobile-scan .workspace #grid th.check input{margin:0;width:12px;height:12px;vertical-align:middle}

@@ -28,3 +28,5 @@
 仅限开发，可用 `JY_DB_PATH` 指向临时文件，设置测试账号环境变量后运行 `python server.py`，前端地址使用 `http://127.0.0.1:8000`。正式使用需要HTTPS。程序只依赖Python标准库。
 
 单位扩展：记录可带可选字符串 `unit`（最多80字符），不改变 `values` 的10项顺序；后台单独持久化单位，查询记录会带回该属性。兼容未带单位的旧提交，已有数据库会补建单位列。状态是前端核对元数据，不作为已入库证明。
+
+退出快照：`POST /api/scan-checkpoints` 需要Bearer令牌，接收 `{checkpointId,deviceId,partIndex,totalParts,records}`；每片最多200条，records包含既有字段及 `reviewStatus`、`submittedAt`。只在全部分片保存后返回 `complete:true`。这保存草稿和核对状态，不把草稿当作正式已确认报工。`GET /api/scan-checkpoints/latest?deviceId=...` 返回该账号该设备最近一次完整快照；未完成快照不作为恢复依据。正式确认仍用 `/api/scan-reports`。
