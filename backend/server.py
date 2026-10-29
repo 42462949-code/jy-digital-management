@@ -40,6 +40,8 @@ def initialize():
         con.execute('PRAGMA journal_mode=WAL')
         con.execute('CREATE TABLE IF NOT EXISTS sessions (token_hash TEXT PRIMARY KEY, username TEXT NOT NULL, expires REAL NOT NULL)')
         con.execute('CREATE TABLE IF NOT EXISTS reports (id TEXT PRIMARY KEY, payload TEXT NOT NULL, signature TEXT NOT NULL, username TEXT NOT NULL, received_at TEXT NOT NULL)')
+        if 'unit' not in {column[1] for column in con.execute('PRAGMA table_info(reports)')}:
+            con.execute("ALTER TABLE reports ADD COLUMN unit TEXT NOT NULL DEFAULT ''")
         con.execute('CREATE TABLE IF NOT EXISTS batches (id TEXT PRIMARY KEY, signature TEXT NOT NULL, response TEXT NOT NULL)')
         con.execute('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)')
         fingerprint = hashlib.sha256((USER+'\0'+PASSWORD).encode()).hexdigest()
@@ -79,7 +81,10 @@ def validate(records):
                 raise ValueError('扫码字段无效或内容过长')
         dt.datetime.strptime(values[0], '%Y-%m-%d %H:%M:%S')
         dt.datetime.strptime(values[1], '%Y-%m-%d')
-        output.append({'id':record['id'],'values':values})
+        unit = record.get('unit','')
+        if not isinstance(unit,str) or len(unit)>80:
+            raise ValueError('单位无效')
+        output.append({'id':record['id'],'values':values,'unit':unit})
     return output
 
 class Handler(BaseHTTPRequestHandler):
@@ -157,9 +162,9 @@ class Handler(BaseHTTPRequestHandler):
             limit = max(1,min(200,int(query.get('limit',['200'])[0])))
             offset = max(0,int(query.get('offset',['0'])[0]))
             with connect() as con:
-                rows = con.execute('SELECT id,payload,received_at,username FROM reports ORDER BY received_at DESC,id LIMIT ? OFFSET ?',(limit,offset)).fetchall()
+                rows = con.execute('SELECT id,payload,received_at,username,unit FROM reports ORDER BY received_at DESC,id LIMIT ? OFFSET ?',(limit,offset)).fetchall()
                 count = con.execute('SELECT COUNT(*) FROM reports').fetchone()[0]
-            return self.reply(200, {'fields':FIELDS,'total':count,'records':[{'id':r[0],'values':json.loads(r[1]),'receivedAt':r[2],'username':r[3]} for r in rows]})
+            return self.reply(200, {'fields':FIELDS,'total':count,'records':[{'id':r[0],'values':json.loads(r[1]),'receivedAt':r[2],'username':r[3],'unit':r[4]} for r in rows]})
         except ValueError:
             return self.reply(400, {'error':'分页参数错误'})
 
@@ -205,18 +210,20 @@ class Handler(BaseHTTPRequestHandler):
                 con.execute('BEGIN IMMEDIATE')
                 prior = con.execute('SELECT signature,response FROM batches WHERE id=?',(batch,)).fetchone()
                 if prior:
-                    if prior[0] != signature:
+                    legacy_signature = digest([{'id':r['id'],'values':r['values']} for r in records]) if all(not r['unit'] for r in records) else signature
+                    if prior[0] not in (signature,legacy_signature):
                         return self.reply(409, {'error':'批次内容已改变，请重新核对'})
                     return self.reply(200,json.loads(prior[1]))
                 for record in records:
                     payload = canonical(record['values'])
-                    checksum = digest(record['values'])
+                    checksum = digest({'values':record['values'],'unit':record['unit']})
                     existing = con.execute('SELECT signature FROM reports WHERE id=?',(record['id'],)).fetchone()
-                    if existing and existing[0] != checksum:
+                    legacy_checksum = digest(record['values']) if not record['unit'] else checksum
+                    if existing and existing[0] not in (checksum,legacy_checksum):
                         con.rollback()
                         return self.reply(409, {'error':'记录已提交且内容不同，请联系管理员'})
                     if not existing:
-                        con.execute('INSERT INTO reports VALUES (?,?,?,?,?)',(record['id'],payload,checksum,username,now))
+                        con.execute('INSERT INTO reports (id,payload,signature,username,received_at,unit) VALUES (?,?,?,?,?,?)',(record['id'],payload,checksum,username,now,record['unit']))
                 con.execute('INSERT INTO batches VALUES (?,?,?)',(batch,signature,canonical(response)))
             return self.reply(200,response)
         except (ValueError,TypeError,OverflowError):

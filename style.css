@@ -504,3 +504,8 @@ body.mobile-scan .phone-column-settings .column-move button{min-width:34px;min-h
 .workspace #grid th .funnel:active{transform:translateY(1px);filter:brightness(.85);text-shadow:none}
 body.mobile-scan #modal.columns-dialog{padding:16px}
 @media(prefers-reduced-motion:reduce){:is(#app,#modal,.excel-filter) button:not(.funnel),.workspace #grid th .funnel{transition:none}:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):hover,:is(#app,#modal,.excel-filter) button:not(.funnel):not(:disabled):active,.workspace #grid th .funnel:hover,.workspace #grid th .funnel:active{transform:none}}
+
+/* Scan review status is local metadata; the ten backend payload fields stay unchanged. */
+.workspace #grid .scan-review-status{width:100%;min-width:0;height:30px;padding:3px 4px;border:0;border-radius:0;background:transparent;font:inherit;text-align:inherit;color:inherit;cursor:pointer}
+.workspace #grid .scan-review-status:focus{outline:1px solid #548dd4;outline-offset:-1px;background:#f1f6ff}
+.workspace #grid .scan-review-status:disabled{opacity:1;color:#4f876d;cursor:default}
