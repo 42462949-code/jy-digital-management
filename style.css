@@ -364,3 +364,8 @@ html[lang=vi] .lean-step h3{font-size:14px}
 .workspace #grid th .funnel.active{background:#fff;color:#548DD4;border-color:#fff}
 .workspace #grid th .resizer{width:4px}
 @media print{.workspace #grid th .funnel,.workspace #grid th .resizer{display:none}.workspace #grid .header-label{padding-bottom:0}}
+
+/* Header filters: arrow only, while preserving the existing hit area. */
+.workspace #grid th .funnel,.workspace #grid th .funnel.active{border:0;background:transparent;box-shadow:none;color:#fff;opacity:1}
+.workspace #grid th .funnel:hover{border:0;background:transparent;box-shadow:none;outline:0;color:#fff}
+.workspace #grid th .funnel:focus-visible{border:0;background:transparent;box-shadow:none;color:#fff;outline:1px dotted #fff;outline-offset:1px}
