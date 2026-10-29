@@ -23,6 +23,8 @@ Object.assign(viText,{'序号':'STT','选择':'Chọn','预发货日期':'Ngày 
 Object.assign(viText,{'恢复发布数据':'Khôi phục dữ liệu đã phát hành','确认替换':'Xác nhận thay thế','已恢复发布数据':'Đã khôi phục dữ liệu đã phát hành','替换前自动保留本地副本。':'Tự động giữ bản sao cục bộ trước khi thay thế.'});
 Object.assign(viText,{'上传完成：保留 ':'Tải lên hoàn tất: giữ lại ',' 条，已删除 ':' bản ghi, đã xóa ',' 条未发货数量为0的订单':' đơn hàng có số lượng chưa giao bằng 0'});
 Object.assign(viText,{'搜索':'Tìm kiếm','清除此列筛选':'Xóa bộ lọc cột này','升序排序（A → Z）':'Sắp xếp tăng dần (A → Z)','降序排序（Z → A）':'Sắp xếp giảm dần (Z → A)','从小到大排序':'Sắp xếp từ nhỏ đến lớn','从大到小排序':'Sắp xếp từ lớn đến nhỏ','从早到晚排序':'Sắp xếp từ sớm đến muộn','从晚到早排序':'Sắp xếp từ muộn đến sớm','（全选）':'(Chọn tất cả)','（全选搜索结果）':'(Chọn tất cả kết quả)','无匹配项':'Không có kết quả','筛选值列表':'Danh sách giá trị lọc'});
+Object.assign(viText,{'生产组别':'Nhóm sản xuất','正常班工时':'Giờ làm chính thức','平时加班工时':'Giờ tăng ca ngày thường','周未加班工时':'Giờ tăng ca cuối tuần','投入总工时':'Tổng giờ công','总工时折算成正常班工时':'Tổng giờ quy đổi thành giờ làm chính thức','工时单价':'Đơn giá giờ công','理论投入工时成本':'Chi phí giờ công lý thuyết','考勤已保存':'Đã lưu chấm công','保存失败，请先导出备份':'Lưu thất bại, hãy xuất bản sao lưu trước'});
+Object.assign(viText,{'已载入考勤空白模板（21行）':'Đã tải mẫu chấm công trống (21 dòng)'});
 const languageOriginals=new WeakMap(),languageAttributes=new WeakMap();let languageBusy=false;
 const translatedKeys=Object.keys(viText).sort((a,b)=>b.length-a.length);
 function translateInterfaceText(s){if(viText[s])return viText[s];let trim=s.trim();if(viText[trim])return s.replace(trim,viText[trim]);let re=new RegExp(translatedKeys.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|'),'g');return s.replace(re,k=>viText[k])}
