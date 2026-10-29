@@ -546,3 +546,38 @@ html.phone-device .workspace-controls .phone-landscape-control{font-size:11px;pa
 .workspace .brand .company-logo{width:116px;height:46px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
 html[lang] .workspace .brand{font-size:20px;gap:12px}
 @media(max-width:700px){.workspace .brand .company-logo{width:106px;height:42px}html[lang] .workspace .brand{font-size:18px;gap:10px}html[lang=vi] .workspace .brand{font-size:16px}}
+
+/* Column widths are saved pixel dimensions, never redistributed to fit a phone. */
+.workspace #grid>table{table-layout:fixed;box-sizing:border-box}
+html.phone-device .workspace #grid .resizer{touch-action:pan-x pan-y;pointer-events:none}
+@media(pointer:fine){html.phone-device .workspace #grid .resizer{pointer-events:auto}}
+
+/* Flat home selection and authentication actions, with keyboard focus preserved. */
+#app .factory-home :is(.language-toggle,.factory-switch) button,#modal.auth-dialog button{box-shadow:none!important;transform:none!important;filter:none!important}
+#modal.login-dialog{width:380px;max-width:calc(100vw - 32px);padding:24px}
+.login-card .login-brand{gap:12px;align-items:center}
+.login-card .company-logo{width:96px;height:40px;border:0;box-shadow:none;background:transparent}
+.login-card .login-brand h2{font-size:24px;font-weight:600;line-height:1.3;white-space:nowrap;margin:0;color:#34485e}
+.login-card .login-intro{font-size:13px;line-height:1.7;margin:20px 0}
+.login-card .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.login-card .login-field{display:flex;align-items:center;gap:9px;min-width:0;height:46px;margin:14px 0;border:1px solid #dce3ee;border-radius:6px;padding:0 11px;background:#fff}
+.login-card .login-field svg{width:20px;height:20px;flex:0 0 20px;color:#748ba5}
+#modal .login-card .login-field input{width:100%;min-width:0;height:42px;padding:8px 0;margin:0;border:0;background:transparent;font-size:16px;box-shadow:none}
+.login-card .login-field:focus-within{border-color:#3778ea;outline:1px solid #3778ea}
+#modal .login-card .login-field input:focus{outline:0}
+.login-card .login-options{gap:10px;margin:15px 0 8px;flex-wrap:wrap}
+.login-card .login-options .muted{font-size:11px}
+.login-card .dialogfoot{margin-top:18px}
+.column-transfer{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start;margin-top:12px}
+.column-transfer button{font-size:12px;padding:7px 10px}
+@media(max-width:420px){#modal.login-dialog{padding:22px}.login-card .login-brand{gap:10px}.login-card .company-logo{width:86px;height:36px}.login-card .login-brand h2{font-size:22px}}
+@media(max-width:360px){#modal.login-dialog{padding:20px}.login-card .company-logo{width:80px}.login-card .login-brand h2{font-size:20px}}
+
+.login-card .login-brand{flex-direction:column;justify-content:center;gap:9px}
+.login-card .login-brand h2{text-align:center}
+
+/* Hide business Excel and printing actions on physical handsets, even in the wide landscape canvas. */
+html.phone-device .workspace .desktop-data-action{display:none!important}
+
+.column-transfer-help{font-size:11px;line-height:1.6;margin:7px 0 0}
+.login-card .login-options .muted{font-size:12px}
