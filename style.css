@@ -536,3 +536,13 @@ html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.ta
 html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filter select{width:45%;font-size:11px;padding-left:4px;padding-right:0}
 html.phone-device:not(.phone-landscape-fit) body:not(.mobile-scan) .workspace.table-page .filter input{width:55%;font-size:12px;padding:6px 4px}
 body.mobile-scan .workspace #grid th.check input{margin:0;width:12px;height:12px;vertical-align:middle}
+
+/* Put arrow glyphs closer to the lower-right corner, without adding a border. */
+.workspace #grid th .funnel,body.mobile-scan .workspace #grid th .funnel{right:0;bottom:-1px}
+.phone-landscape-control[hidden]{display:none!important}
+html.phone-device .workspace-controls .phone-landscape-control{font-size:11px;padding:5px 8px;color:#507565;border-color:#d5e4dc}
+
+/* Larger company mark and system name, with no surrounding frame. */
+.workspace .brand .company-logo{width:116px;height:46px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+html[lang] .workspace .brand{font-size:20px;gap:12px}
+@media(max-width:700px){.workspace .brand .company-logo{width:106px;height:42px}html[lang] .workspace .brand{font-size:18px;gap:10px}html[lang=vi] .workspace .brand{font-size:16px}}
