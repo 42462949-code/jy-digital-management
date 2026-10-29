@@ -357,8 +357,8 @@ html[lang=vi] .lean-step h3{font-size:14px}
 /* Full wrapping in every column, strong white header grid and larger filters. */
 .workspace #grid td{white-space:normal;overflow-wrap:anywhere;word-break:normal;overflow:visible;vertical-align:middle;height:39px}
 .workspace #grid .celltext,.workspace #grid td:nth-child(2) .celltext{display:block;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;text-overflow:clip;overflow:visible;max-height:none;line-height:18px;-webkit-line-clamp:unset;-webkit-box-orient:initial}
-.workspace #grid th{border:2px solid #fff;height:58px;white-space:normal;vertical-align:middle;padding:0}
-.workspace #grid .header-label{white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:18px;max-height:none;overflow:visible;padding:0 0 22px}
+.workspace #grid th{border:2px solid #fff;height:39px;white-space:normal;vertical-align:middle;padding:0}
+.workspace #grid .header-label{white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:15px;max-height:none;overflow:visible;padding:0 0 7px}
 .workspace #grid th .funnel{position:absolute;right:5px;bottom:3px;width:21px;height:21px;display:grid;place-items:center;border:1px solid #ffffff85;border-radius:3px;background:#ffffff1f;color:#fff;font-size:19px;font-family:Arial,sans-serif;font-weight:400;line-height:19px;padding:0;opacity:1;cursor:pointer;box-shadow:none}
 .workspace #grid th .funnel:hover,.workspace #grid th .funnel:focus-visible{background:#ffffff40;border-color:#fff;outline:1px solid #fff;outline-offset:1px}
 .workspace #grid th .funnel.active{background:#fff;color:#548DD4;border-color:#fff}
