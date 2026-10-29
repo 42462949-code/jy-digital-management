@@ -444,3 +444,12 @@ body.mobile-scan .workspace #grid th .funnel{right:1px;bottom:1px}
 
 /* Prevent mobile text autosizing from breaking the proportional landscape view. */
 html.phone-landscape-fit{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+
+/* Half-screen camera with a vertical form on phones; retain camera proportions. */
+body.mobile-scan .scan-entry{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start;max-height:60dvh;overflow-y:auto}
+body.mobile-scan .scan-camera{width:100%;height:auto;min-height:0;max-height:none;aspect-ratio:3/5;align-self:start}
+body.mobile-scan .scan-form{justify-content:flex-start}
+body.mobile-scan .scan-context{grid-template-columns:minmax(0,1fr)}
+body.mobile-scan .scan-context .scan-date-field{display:none}
+body.mobile-scan .scan-mobile-actions .actions{flex-direction:column;align-items:stretch}
+body.mobile-scan .scan-mobile-actions .actions button{flex:0 0 28px;width:100%}
