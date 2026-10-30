@@ -654,3 +654,12 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 :is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel):disabled{background:#f1f5fb;border-color:#ccd9ea;color:#8399b2;opacity:.6;cursor:not-allowed}
 #app .workspace #topTabs button.active{background:#2466b8;border-color:#2466b8;color:#fff}
 #app .workspace #topTabs button.active:hover{background:#1c559c;border-color:#1c559c;color:#fff}
+
+/* Field pickers match the flat blue action controls; keyword fields stay white. */
+.workspace .filters .filter .pair{border:0;overflow:visible;box-shadow:none!important}
+.workspace .filters .filter select{height:35px;background:#edf5ff;border:1px solid #9bbfe9;border-radius:6px 0 0 6px;color:#235b98;font-weight:600;cursor:pointer;box-shadow:none;transition:background .15s,border-color .15s,color .15s}
+.workspace .filters .filter select:hover{background:#dbeaff;border-color:#397cce;color:#174881}
+.workspace .filters .filter select:active{background:#c7ddf8;border-color:#2466b8;color:#133f75}
+.workspace .filters .filter select:focus-visible{outline:2px solid #397cce;outline-offset:-2px}
+.workspace .filters .filter input{height:35px;background:#fff;border:1px solid #dce4ee;border-left:0;border-radius:0 6px 6px 0;box-shadow:none}
+.workspace .filters .filter input:focus{border-color:#397cce;outline:1px solid #397cce;outline-offset:-1px}
