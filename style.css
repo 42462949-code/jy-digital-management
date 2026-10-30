@@ -738,3 +738,18 @@ body.mobile-scan .scan-phone-heading #scanSoundPreview{grid-column:1;justify-sel
 .workspace button.icon-tool>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .workspace button.icon-tool svg{width:20px;height:20px;flex:0 0 20px}
 .workspace button.icon-tool:focus-visible{outline:2px solid #2365c6;outline-offset:2px}
+
+/* Dense table chrome: 24px action icons and less vertical space above the grid. */
+body:not(.mobile-scan) .workspace.table-page .topbar{height:auto;min-height:50px;padding-top:4px;padding-bottom:4px;row-gap:4px}
+body:not(.mobile-scan) .workspace.table-page #topTabs{height:auto;margin-top:0}
+body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs{padding-top:0;padding-bottom:0}
+body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button{height:30px;min-height:30px;padding-top:0;padding-bottom:0}
+body:not(.mobile-scan) .workspace.table-page .top-actions .actions{min-height:32px;padding:4px 14px;gap:7px}
+body:not(.mobile-scan) .workspace.table-page :is(.actions,.workspace-controls)>button.icon-tool{height:24px;padding:3px 7px}
+body:not(.mobile-scan) .workspace.table-page button.icon-tool svg{width:16px;height:16px;flex-basis:16px}
+body:not(.mobile-scan) .workspace.table-page .sales-order-options{padding:0;gap:6px}
+body:not(.mobile-scan) .workspace.table-page .sales-order-options label{height:24px;min-height:24px;padding:1px 8px;line-height:20px}
+body:not(.mobile-scan) .workspace.table-page .data-content .filters{padding-top:4px;padding-bottom:4px;row-gap:4px}
+body:not(.mobile-scan) .workspace.table-page .filters .filter .pair{height:30px}
+body:not(.mobile-scan) .workspace.table-page .filters .filter :is(select,input){height:30px;padding-top:3px;padding-bottom:3px}
+body:not(.mobile-scan) .workspace.table-page .filters>:is(.primary,.reset-query){height:30px;padding-top:3px;padding-bottom:3px}
