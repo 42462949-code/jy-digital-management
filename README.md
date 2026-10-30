@@ -83,3 +83,10 @@ GitHub Settings → Pages → Build and deployment → Source: Deploy from a bra
 列宽和登录界面（20261029-layout35）：列宽按保存像素值固定，表格不按手机屏宽重新分配列宽；普通手机横屏按整张表总宽度（至少1440px）缩放整个界面，保留手势缩放。触屏浏览不再意外拖动列边缘修改宽度，仍可在列设置调整。电脑和手机的本机设置不会自动共享，新增列设置JSON导出／导入用于跨设备沿用；自动跨设备同步仍需要共享后台。首页语言、图片切换和登录类弹窗按钮恢复平面效果；登录框收窄，标题放大，用户名和密码使用图标与无障碍隐藏标签。
 
 手机端隐藏业务Excel导入／上传、导出、标签打印和打印按钮（横屏亦隐藏），电脑保留；列设置文件的跨设备导入／导出入口仍可使用。“恢复发布数据”和“更新”工具栏按钮已移除。首页语言、工厂图片切换及登录弹窗按钮改为平面，登录标题居中。
+
+### Label templates and cell entry (2026-10-30)
+
+- Label printing offers lamination, foam and Henan customer templates. Each page is 100 × 80 mm, with 2 mm internal margins. Preview edits and copy counts affect printing only; source business records are unchanged. Use actual size and disable browser headers/footers. Physical feed gaps are configured in the printer driver.
+- Henan QR payload follows the five-field production-scanning backslash format, including an empty final quantity. Code 128B packaging barcodes accept printable ASCII. QR encoder dependencies and licenses are bundled locally in `qr-encoder.js` and `qr-encoder-LICENSE.txt`.
+- Production work orders project an editable `信息录入` column before `工单下达日期`. Its values are stored by `workOrderIdentity` in `jy-work-information`. Original 14-field work-order arrays stay unchanged so existing production/scanner mappings remain compatible. Legacy 14-column Excel imports remain valid; optional information values are included on export/import.
+- Business cells use click-to-select, double-click/F2-to-edit, type-to-replace, Escape-to-cancel, Enter-to-save-and-move, and Tab navigation. Submitted scan records remain protected by the existing edit checks.
