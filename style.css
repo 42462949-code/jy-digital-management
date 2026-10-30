@@ -753,3 +753,7 @@ body:not(.mobile-scan) .workspace.table-page .data-content .filters{padding-top:
 body:not(.mobile-scan) .workspace.table-page .filters .filter .pair{height:30px}
 body:not(.mobile-scan) .workspace.table-page .filters .filter :is(select,input){height:30px;padding-top:3px;padding-bottom:3px}
 body:not(.mobile-scan) .workspace.table-page .filters>:is(.primary,.reset-query){height:30px;padding-top:3px;padding-bottom:3px}
+
+/* Reduce ordinary table headers from 39px to 26px while retaining wrapped labels. */
+body:not(.mobile-scan) .workspace #grid thead th{height:26px;padding:0}
+body:not(.mobile-scan) .workspace #grid .header-label{line-height:12px;padding-top:0;padding-bottom:1px}
