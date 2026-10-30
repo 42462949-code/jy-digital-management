@@ -55,3 +55,7 @@ Object.assign(viText,{'可选筛选值':'Giá trị lọc có thể chọn','最
 Object.assign(viText,{'信息录入':'Nhập thông tin'});
 
 Object.assign(viText,{'标签打印':'In nhãn','贴合标签模板':'Mẫu nhãn cán dán','泡棉标签模板':'Mẫu nhãn mút xốp','河南客户标签模板':'Mẫu nhãn khách Hà Nam','标签模板':'Mẫu nhãn','生产日期':'Ngày sản xuất','组别':'Tổ','每条记录份数':'Số bản mỗi dòng','当前编辑记录':'Dòng đang chỉnh sửa','标签内容':'Nội dung nhãn','实际尺寸预览':'Xem trước kích thước thật','每张标签数量':'Số lượng mỗi nhãn','物料编码':'Mã vật tư','包装条码':'Mã vạch kiện hàng','出货日期':'Ngày xuất hàng','LOT批号':'Số lô LOT','包装序号（例如01/10）':'Số kiện (ví dụ 01/10)'});
+
+Object.assign(viText,{'试听':'Thử âm','试听提示音':'Thử âm báo','请点“试听”开启提示音，并检查手机媒体音量':'Nhấn “Thử âm” để bật âm báo và kiểm tra âm lượng phương tiện','当前浏览器不支持声音提示，请尝试其他浏览器':'Trình duyệt không hỗ trợ âm báo, vui lòng thử trình duyệt khác'});
+
+Object.assign(viText,{'3分钟未扫码，已自动停止，未提交明细已保存为草稿。':'Không quét trong 3 phút, camera đã dừng; các dòng chưa gửi đã lưu nháp.','3分钟未扫码，已停止扫码并保存草稿':'Không quét 3 phút: đã dừng camera và lưu nháp','已停止扫码，但草稿保存失败，请勿关闭页面，先导出备份。':'Đã dừng camera nhưng không lưu được nháp. Đừng đóng trang; hãy xuất bản sao lưu.'});

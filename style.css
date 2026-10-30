@@ -727,3 +727,6 @@ body.mobile-scan-landscape .scan-mobile-tools .scan-mobile-actions .actions{gap:
 
 /* All business header cells share the same thin white grid lines. */
 .workspace #grid thead th{border:1px solid #fff!important;box-shadow:none}
+
+/* A compact preview control also provides the user gesture mobile audio needs. */
+body.mobile-scan .scan-phone-heading #scanSoundPreview{grid-column:1;justify-self:start;min-height:28px;padding:4px 9px;font-size:12px}

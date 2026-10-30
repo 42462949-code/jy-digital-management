@@ -101,3 +101,9 @@ Sales orders also project `信息录入` before `状态`, saved independently in
 ### Scan landscape and header borders (2026-10-30)
 
 Scan reporting no longer requests a portrait lock or displays a rotation-blocking overlay. Orientation changes reflow the native-scale mobile layout without stopping the active camera or canceling quantity entry. Other mobile tables retain their fixed 65% landscape scale. All business-grid header cells, including checkbox and information columns, use 1px white borders.
+
+### Scan feedback and inactivity (2026-10-30)
+
+- Valid, nonduplicate production QR reads play one short two-tone square-wave cue (2050/2750 Hz), before quantity completion or persistence. This indicates recognition, not backend submission. A reusable Web Audio context is unlocked by user gestures; desktop and mobile offer a sound preview. Audio errors never prevent recording, and the device's media volume remains under user control.
+- Camera scanning stops after three minutes without a valid new QR read. Starting the camera or recognizing a valid code resets the timer; invalid codes and duplicate suppression do not extend it. Timer callbacks check the current camera generation and deadline so stopped or replaced sessions are not affected.
+- Idle shutdown saves unsubmitted entries as local drafts through the existing queued/rollback-capable storage operation. Submitted entries keep their state and receipts. Pending quantity input remains open; finishing it still saves a draft. Failed saves are reported rather than claimed successful. Manual stop, exit and background camera release cancel the inactivity timer.
