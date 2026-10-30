@@ -663,3 +663,9 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 .workspace .filters .filter select:focus-visible{outline:2px solid #397cce;outline-offset:-2px}
 .workspace .filters .filter input{height:35px;background:#fff;border:1px solid #dce4ee;border-left:0;border-radius:0 6px 6px 0;box-shadow:none}
 .workspace .filters .filter input:focus{border-color:#397cce;outline:1px solid #397cce;outline-offset:-1px}
+
+/* Green entry action on the company homepage. */
+#app .factory-home .factory-login{background:#22835d;border-color:#22835d;color:#fff}
+#app .factory-home .factory-login:hover{background:#196b4a;border-color:#196b4a;color:#fff}
+#app .factory-home .factory-login:active{background:#14563d;border-color:#14563d;color:#fff}
+#app .factory-home .factory-login:focus-visible{outline:2px solid #22835d;outline-offset:3px}
