@@ -47,3 +47,5 @@ function setLanguage(value){uiLanguage=value==='vi'?'vi':'zh';jyStorage.setItem(
 const observer=new MutationObserver(applyLanguage);observer.observe(document.body,{childList:true,subtree:true,characterData:true});
 
 Object.assign(viText,{'泡棉订单':'Đơn hàng mút xốp','贴合订单':'Đơn hàng cán dán','全部订单':'Tất cả đơn hàng','只显示未完工订单':'Chỉ hiện đơn chưa hoàn thành','订单显示范围':'Phạm vi đơn hàng'});
+
+Object.assign(viText,{'筛选字段保存失败，请检查浏览器存储':'Không lưu được trường lọc, vui lòng kiểm tra bộ nhớ trình duyệt'});
