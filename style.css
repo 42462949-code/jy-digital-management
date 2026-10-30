@@ -699,8 +699,8 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 .workspace #grid tbody td[contenteditable=true]{cursor:text;outline:2px solid #2869b9;outline-offset:-2px}
 
 /* Stronger outlines around all four query groups, without raised shadows. */
-.workspace .filters .filter select{border:2px solid #568bc8}
-.workspace .filters .filter input{border:2px solid #568bc8;border-left:0}
+.workspace .filters .filter select{border:1px solid #568bc8}
+.workspace .filters .filter input{border:1px solid #568bc8;border-left:0}
 .workspace .filters .filter .pair:hover select,.workspace .filters .filter .pair:hover input{border-color:#326eaf}
 .workspace .filters .filter .pair:focus-within select,.workspace .filters .filter .pair:focus-within input{border-color:#1f62b3}
 .workspace .filters .filter select{text-align:center;text-align-last:center}
