@@ -92,3 +92,8 @@ GitHub Settings → Pages → Build and deployment → Source: Deploy from a bra
 - Business cells use click-to-select, double-click/F2-to-edit, type-to-replace, Escape-to-cancel, Enter-to-save-and-move, and Tab navigation. Submitted scan records remain protected by the existing edit checks.
 
 Sales orders also project `信息录入` before `状态`, saved independently in `jy-sales-information` by original order-line ID. Both original sales/work Excel layouts remain importable; optional information values round-trip as the first exported column. Date formatting, labels, business status/process filters and downstream work/report mappings continue to use the original source fields.
+
+### Readable landscape and transparent shortcuts (2026-10-30)
+
+- Normal phone pages use at least 90% automatic initial scale in landscape. The visible layout follows screen width while fixed-width tables scroll inside their own grid; saved column widths are not redistributed. Native pinch zoom remains unrestricted. Scanner portrait rules are unchanged.
+- Website icons now use only the transparent company symbol. `icons/company-symbol.ico` contains 16/24/32/48/64/128/256-pixel images; browser, manifest and Apple PNG icons retain alpha transparency. Manifest entries use `purpose: any` rather than the previous opaque maskable variants. Device launchers may still apply their own background or mask. Re-add existing shortcuts to refresh cached icon artwork.
