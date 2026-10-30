@@ -706,3 +706,9 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 .workspace .filters .filter select{text-align:center;text-align-last:center}
 .workspace .filters .filter select option{text-align:center}
 .workspace .filters .filter input{text-align:left}
+
+/* Larger vector icons for the right-side workspace controls. */
+.workspace .utility-icon{width:20px;height:20px;flex:0 0 20px;vertical-align:middle}
+.workspace .workspace-controls>button,.workspace .filters>.primary,.workspace .filters>.reset-query{display:inline-flex;align-items:center;justify-content:center;gap:6px}
+html.phone-device:not(.phone-landscape-fit) .workspace .filters>.primary,html.phone-device:not(.phone-landscape-fit) .workspace .filters>.reset-query{gap:3px}
+html.phone-device:not(.phone-landscape-fit) .workspace .filters .utility-icon{width:14px;height:14px;flex-basis:14px}
