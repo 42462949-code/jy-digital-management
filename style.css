@@ -669,3 +669,6 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 #app .factory-home .factory-login:hover{background:#196b4a;border-color:#196b4a;color:#fff}
 #app .factory-home .factory-login:active{background:#14563d;border-color:#14563d;color:#fff}
 #app .factory-home .factory-login:focus-visible{outline:2px solid #22835d;outline-offset:3px}
+
+/* Query and reset share the same dimensions; phone rules keep both at 48px wide. */
+.workspace .filters>.primary,.workspace .filters>.reset-query{width:85px;min-width:85px;height:35px;padding:6px 8px;font-size:12px;line-height:1.4;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
