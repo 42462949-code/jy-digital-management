@@ -732,3 +732,9 @@ body.mobile-scan-landscape .scan-mobile-tools .scan-mobile-actions .actions{gap:
 
 /* A compact preview control also provides the user gesture mobile audio needs. */
 body.mobile-scan .scan-phone-heading #scanSoundPreview{grid-column:1;justify-self:start;min-height:28px;padding:4px 9px;font-size:12px}
+
+/* Compact table actions; native tooltips and accessible names identify each icon. */
+.workspace :is(.actions,.workspace-controls)>button.icon-tool{width:36px;min-width:36px;height:36px;padding:7px;gap:0;flex:0 0 36px;box-shadow:none!important}
+.workspace button.icon-tool>span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.workspace button.icon-tool svg{width:20px;height:20px;flex:0 0 20px}
+.workspace button.icon-tool:focus-visible{outline:2px solid #2365c6;outline-offset:2px}
