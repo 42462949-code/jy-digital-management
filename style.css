@@ -645,3 +645,12 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 .workspace #grid tbody .celltext,.workspace #grid tbody .scan-review-status{background:transparent!important}
 .workspace #grid tbody tr.active-body-row>td{background:#eef5fc!important}
 @media print{.workspace #grid tbody tr.active-body-row>td{background:transparent!important}}
+
+/* Unified flat blue controls across business tables; filter arrows retain their own state. */
+:is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel){background:#edf5ff;border:1px solid #9bbfe9;border-radius:6px;color:#235b98;font-weight:600;box-shadow:none!important;transform:none!important;filter:none!important;transition:background .15s,border-color .15s,color .15s,outline-color .15s}
+:is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel):not(:disabled):hover{background:#dbeaff;border-color:#397cce;color:#174881}
+:is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel):not(:disabled):active{background:#c7ddf8;border-color:#2466b8;color:#133f75}
+:is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel):focus-visible{outline:2px solid #397cce;outline-offset:2px}
+:is(#app .workspace,#modal:not(.auth-dialog),.excel-filter .excel-filter-footer) button:not(.funnel):disabled{background:#f1f5fb;border-color:#ccd9ea;color:#8399b2;opacity:.6;cursor:not-allowed}
+#app .workspace #topTabs button.active{background:#2466b8;border-color:#2466b8;color:#fff}
+#app .workspace #topTabs button.active:hover{background:#1c559c;border-color:#1c559c;color:#fff}
