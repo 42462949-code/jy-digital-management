@@ -1,7 +1,7 @@
 /* Use the visible viewport as the orientation authority when WebView screen APIs
    are stale. Width × visualViewport.scale is stable during native pinch zoom. */
 (()=>{
-const normal='width=device-width, initial-scale=1, user-scalable=yes',baseCanvasWidth=1440,minLandscapeScale=.9;
+const normal='width=device-width, initial-scale=1, user-scalable=yes',baseCanvasWidth=1440,minLandscapeScale=.5;
 let scanning=false,lastMode='',lastCanvasWidth=0,lastScreenWidth=0,lastContent='',manualLock=false,ownedFullscreen=false,lastOrientation=null,timers=[];
 function phoneDevice(){if(navigator.userAgentData?.mobile||/iPhone|iPod|Android.*Mobile|Windows Phone/i.test(navigator.userAgent))return true;const side=Math.min(screen.width||innerWidth,screen.height||innerHeight);return !!window.matchMedia?.('(pointer: coarse)').matches&&side>0&&side<=700}
 function physicalWidth(){const v=window.visualViewport;return v&&v.width>0&&v.scale>0?v.width*v.scale:0}
