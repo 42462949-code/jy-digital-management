@@ -639,3 +639,9 @@ html.phone-device .workspace .sales-order-options{margin-left:0;gap:5px 12px}
 .workspace .sales-order-options .is-selected input{accent-color:#fff;color-scheme:light}
 .workspace .sales-order-options .is-selected input:focus-visible{outline-color:#fff}
 html.phone-device .workspace .sales-order-options{gap:6px}
+
+/* Unfilled table bodies; only the row containing the active cell is tinted. */
+.workspace #grid tbody tr,.workspace #grid tbody td{background:transparent!important;background-image:none!important}
+.workspace #grid tbody .celltext,.workspace #grid tbody .scan-review-status{background:transparent!important}
+.workspace #grid tbody tr.active-body-row>td{background:#eef5fc!important}
+@media print{.workspace #grid tbody tr.active-body-row>td{background:transparent!important}}
