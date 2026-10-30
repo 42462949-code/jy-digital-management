@@ -579,35 +579,37 @@ html.phone-device .workspace .desktop-data-action{display:none!important}
 .column-transfer-help{font-size:11px;line-height:1.6;margin:7px 0 0}
 .login-card .login-options .muted{font-size:12px}
 
-/* Quiet technical styling for the sign-in panel. */
-#modal.login-dialog{overflow:hidden;border:1px solid #d5e5f5;border-radius:18px;padding:30px 26px 24px;background:radial-gradient(ellipse at 100% 0,rgba(66,183,242,.14),transparent 55%),linear-gradient(155deg,#f4faff 0%,#fff 64%);box-shadow:0 24px 80px #102d4a38}
-#modal.login-dialog::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#194da1,#35bee8 65%,transparent)}
-#modal.login-dialog::after{content:"";position:absolute;right:0;top:0;width:140px;height:140px;background-image:linear-gradient(#5198c714 1px,transparent 1px),linear-gradient(90deg,#5198c714 1px,transparent 1px);background-size:18px 18px;mask-image:linear-gradient(225deg,#000,transparent 75%);pointer-events:none}
-#modal.login-dialog::backdrop{background:rgba(12,30,53,.48);backdrop-filter:blur(6px)}
+/* Compact blue and cyan sign-in panel; decorative layers never intercept input. */
+#modal.login-dialog{width:400px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);overflow:auto;border:1px solid #a9cdec;border-radius:16px;padding:30px 28px 24px;background:radial-gradient(ellipse at 100% 0,#dff5ff,transparent 58%),linear-gradient(155deg,#f2f8ff,#fff 65%);box-shadow:0 20px 70px #102d4a30}
+#modal.login-dialog::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:linear-gradient(90deg,#245cb8,#28c4db)}
+#modal.login-dialog::after{content:"";position:absolute;right:14px;top:14px;width:36px;height:36px;border-top:1px solid #65b7dc;border-right:1px solid #65b7dc;pointer-events:none}
+#modal.login-dialog::backdrop{background:rgba(12,30,53,.52);backdrop-filter:blur(6px)}
 .login-card{position:relative;z-index:1}
-.login-card .login-brand{gap:16px;padding:2px 0 16px;border-bottom:1px solid #dce9f5}
-.login-card .company-logo{width:104px;height:42px}
-.login-card .login-brand h2{font-size:25px;letter-spacing:1px;font-weight:650;color:#183a63}
-.login-card .login-brand h2::after{content:"";display:block;width:30px;height:3px;margin:12px auto 0;border-radius:2px;background:linear-gradient(90deg,#2964d7,#37bfd5)}
-.login-card .login-intro{margin:18px 0 20px;font-size:13px;text-align:center;color:#70859d}
-.login-card .login-field{height:46px;margin:12px 0;padding:0 13px;gap:11px;border:1px solid #d6e3f1;border-radius:9px;background:rgba(255,255,255,.85);transition:border-color .16s,background .16s,box-shadow .16s}
-.login-card .login-field svg{color:#527ba7;width:19px;height:19px;flex-basis:19px}
-.login-card .login-field:focus-within{outline:0;border-color:#3c80d9;background:#fff;box-shadow:0 0 0 3px #408ee912}
+.login-card .login-brand{gap:16px;padding:0 0 24px;border:0}
+.login-card .company-logo{width:108px;height:44px}
+.login-card .login-brand h2{font-size:27px;line-height:1.35;letter-spacing:1px;font-weight:700;color:#173e6e;text-align:center}
+.login-card .login-brand h2::after{content:"";display:block;width:48px;height:3px;margin:16px auto 0;border-radius:2px;background:linear-gradient(90deg,#2864d2,#28c4db)}
+.login-card .login-field{height:48px;margin:0 0 14px;padding:0 14px;gap:12px;border:1px solid #b7d1ea;border-radius:8px;background:#fff;transition:border-color .16s,background .16s}
+.login-card .login-field svg{color:#326caa;width:20px;height:20px;flex-basis:20px}
+.login-card .login-field:hover{border-color:#77a8d6}
+.login-card .login-field:focus-within{outline:2px solid #27b5ce;outline-offset:2px;border-color:#2676c6;background:#f7fcff;box-shadow:none}
 #modal .login-card .login-field input{color:#234466;font-size:16px}
-#modal .login-card .login-field input::placeholder{color:#8d9eb1}
-.login-card .login-options{margin:17px 0 4px;align-items:center;gap:8px}
-.login-card .login-options .muted{color:#8293a8;font-size:11px;letter-spacing:0}
-#modal .login-card .password-link{color:#2865b5;font-size:12px}
-.login-card #loginerror{min-height:12px;font-size:12px}
-.login-card .dialogfoot{display:grid;grid-template-columns:1fr 1.5fr;gap:10px;margin-top:16px;padding-top:18px;border-top:1px solid #e0eaf4}
-#modal .login-card .dialogfoot button{height:40px;border-radius:8px;font-size:14px;margin:0;background:#fff;border:1px solid #d8e3ef;color:#59728c;transition:background .16s,border-color .16s}
-#modal .login-card .dialogfoot button:hover{background:#edf5fe;border-color:#a9c5e6}
-#modal .login-card .dialogfoot .primary{background:#2465c5;border-color:#2465c5;color:#fff;letter-spacing:2px}
-#modal .login-card .dialogfoot .primary:hover{background:#1957ad;border-color:#1957ad}
-#modal .login-card .dialogfoot button:active{background:#dcebf9}
-#modal .login-card .dialogfoot .primary:active{background:#154b95}
-@media(max-width:420px){#modal.login-dialog{padding:26px 22px 22px}.login-card .login-brand h2{font-size:23px}.login-card .company-logo{width:96px;height:40px}}
-@media(max-width:360px){#modal.login-dialog{padding:24px 18px 20px}.login-card .login-brand h2{font-size:21px;letter-spacing:.5px}.login-card .login-options{gap:6px}.login-card .login-options .muted{font-size:10px}}
+#modal .login-card .login-field input::placeholder{color:#899eb5}
+.login-card .login-options{margin:18px 0 0;align-items:center;gap:8px}
+.login-card .login-options .muted{color:#71869e;font-size:11px;letter-spacing:0}
+#modal .login-card .password-link{color:#2464b1;font-size:12px;padding:4px 0;background:transparent;border:0;border-radius:0}
+#modal .login-card .password-link:hover{color:#114b95;text-decoration:underline}
+.login-card #loginerror{min-height:0;font-size:12px}
+.login-card #loginerror:empty{display:none}
+.login-card .dialogfoot{display:grid;grid-template-columns:1fr 1.6fr;gap:12px;margin-top:26px;padding-top:20px;border-top:1px solid #d5e6f5}
+#modal .login-card .dialogfoot button{height:42px;border-radius:8px;font-size:14px;margin:0;background:#f5f9ff;border:1px solid #b7d1ea;color:#35618b;transition:background .16s,border-color .16s}
+#modal .login-card .dialogfoot button:hover{background:#e5f0fc;border-color:#77a8d6}
+#modal .login-card .dialogfoot .primary{background:#2365c6;border-color:#2365c6;color:#fff;letter-spacing:2px}
+#modal .login-card .dialogfoot .primary:hover{background:#1854ac;border-color:#1854ac}
+#modal .login-card .dialogfoot button:active{background:#d4e7f9}
+#modal .login-card .dialogfoot .primary:active{background:#13478f}
+@media(max-width:420px){#modal.login-dialog{padding:28px 22px 22px}.login-card .login-brand h2{font-size:25px}.login-card .company-logo{width:100px;height:42px}}
+@media(max-width:360px){#modal.login-dialog{padding:26px 18px 20px}.login-card .login-brand h2{font-size:22px;letter-spacing:.5px}.login-card .login-options{gap:6px}.login-card .login-options .muted{font-size:10px}}
 
 /* Phone toolbars pack visible actions together after desktop-only actions are hidden. */
 html.phone-device .workspace #topActions .actions{justify-content:flex-start;flex-wrap:wrap;min-height:0}
