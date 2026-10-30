@@ -757,3 +757,6 @@ body:not(.mobile-scan) .workspace.table-page .filters>:is(.primary,.reset-query)
 /* Reduce ordinary table headers from 39px to 26px while retaining wrapped labels. */
 body:not(.mobile-scan) .workspace #grid thead th{height:26px;padding:0}
 body:not(.mobile-scan) .workspace #grid .header-label{line-height:12px;padding-top:0;padding-bottom:1px}
+
+/* Lower the page navigation by another third, keeping readable text labels. */
+body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button{height:20px;min-height:20px;padding-top:0;padding-bottom:0;line-height:18px;border-radius:5px}
