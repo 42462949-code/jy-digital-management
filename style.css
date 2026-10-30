@@ -397,7 +397,7 @@ html[lang=vi] .lean-step h3{font-size:14px}
 .workspace #grid .temp-shrink-table tbody tr[data-row] td[contenteditable=true] .celltext{font-size:10pt!important;white-space:normal!important;overflow-wrap:anywhere!important}
 
 /* Scan phone mode is activated only for handsets, including landscape orientation. */
-.scan-mobile-actions,.scan-orientation-notice{display:none}
+.scan-mobile-actions{display:none}
 body.mobile-scan .workspace .topbar,body.mobile-scan .workspace .top-actions{display:none!important}
 body.mobile-scan .workspace{width:100%;max-width:100vw;min-width:0}
 body.mobile-scan .workspace .content.data-content{padding:0;min-width:0}
@@ -425,9 +425,6 @@ body.mobile-scan .scan-panel .filters>.primary{grid-row:1;grid-column:3}
 body.mobile-scan .scan-panel .reset-query{grid-row:1;grid-column:4}
 body.mobile-scan .scan-panel .filter select{width:45%;padding-left:5px;padding-right:0;font-size:11px}
 body.mobile-scan .scan-panel .filter input{padding:6px 4px;font-size:16px;min-width:0}
-body.mobile-scan-landscape .workspace,body.mobile-scan-landscape #modal{visibility:hidden;pointer-events:none}
-body.mobile-scan-landscape .scan-orientation-notice:not([hidden]){position:fixed;inset:0;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:15px;padding:20px;background:#f6faf9;color:#315f53;text-align:center}
-.scan-orientation-notice strong{font-size:20px;font-weight:500}.scan-orientation-notice p{font-size:14px;margin:0;color:#708e83}.scan-rotate-phone{width:46px;height:70px;display:grid;place-items:center;border:3px solid #6eaa98;border-radius:10px;font-size:30px;color:#578b7c}
 body.mobile-scan #modal{max-width:calc(100vw - 20px);max-height:calc(100dvh - 24px);overflow:auto}
 body.mobile-scan #modal input{font-size:16px}
 
@@ -712,3 +709,21 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 .workspace .workspace-controls>button,.workspace .filters>.primary,.workspace .filters>.reset-query{display:inline-flex;align-items:center;justify-content:center;gap:6px}
 html.phone-device:not(.phone-landscape-fit) .workspace .filters>.primary,html.phone-device:not(.phone-landscape-fit) .workspace .filters>.reset-query{gap:3px}
 html.phone-device:not(.phone-landscape-fit) .workspace .filters .utility-icon{width:14px;height:14px;flex-basis:14px}
+
+/* Phone scan reporting works in landscape without locking or stopping the camera. */
+body.mobile-scan-landscape .scan-phone-heading{min-height:32px;padding-top:2px;padding-bottom:2px}
+body.mobile-scan-landscape .scan-entry{grid-template-columns:clamp(120px,38vh,180px) minmax(0,1fr);gap:8px 12px;max-height:60vh;padding:8px;align-items:start}
+body.mobile-scan-landscape .scan-camera{grid-column:1;grid-row:1/span 2;width:100%;height:auto;aspect-ratio:1;align-self:start}
+body.mobile-scan-landscape .scan-form{grid-column:2;grid-row:1;display:grid;grid-template-columns:minmax(0,1fr) 60px;gap:8px;align-items:end}
+body.mobile-scan-landscape .scan-context{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+body.mobile-scan-landscape .scan-context input{height:32px}
+body.mobile-scan-landscape .scan-confirm-slot{margin:0;align-self:end}
+body.mobile-scan-landscape #scanSubmit{width:56px;height:56px;aspect-ratio:1}
+body.mobile-scan-landscape .scan-mobile-tools{grid-column:2;grid-row:2;gap:6px}
+body.mobile-scan-landscape .scan-manual textarea{height:30px;min-height:30px;padding:5px 7px}
+body.mobile-scan-landscape .scan-manual button{height:30px}
+body.mobile-scan-landscape .scan-mobile-tools .scan-mobile-actions .actions{gap:6px}
+@supports(height:100dvh){body.mobile-scan-landscape .scan-entry{grid-template-columns:clamp(120px,38dvh,180px) minmax(0,1fr);max-height:60dvh}}
+
+/* All business header cells share the same thin white grid lines. */
+.workspace #grid thead th{border:1px solid #fff!important;box-shadow:none}

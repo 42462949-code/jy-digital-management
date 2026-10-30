@@ -44,11 +44,11 @@ GitHub Settings → Pages → Build and deployment → Source: Deploy from a bra
 
 ## 手机扫码布局（20261029-mobile22）
 仅手机进入扫码报工时启用：扫码区域置顶，隐藏工作台顶部导航、图片识别、导出和列设置，保留启动摄像头、停止扫码和清空记录。表格与录入字段继续使用原有数据。电脑布局不变。
-在支持 Screen Orientation API 的浏览器尝试锁定竖屏，不进入全屏或索取额外权限；不支持锁定时，横屏显示竖屏提示并暂停摄像头。转回竖屏会恢复原有字段和待补填数量，正常扫码时自动恢复摄像头。系统键盘弹起按设备方向判断，不会当作横屏。离开扫码界面恢复导航并释放本界面获取的方向锁。
+扫码页不再申请方向锁。手机横屏和竖屏均可扫码，旋转时保持摄像头流、已填字段与待补数量；横屏重排摄像头、工序/组别/备注、确认及操作栏。系统键盘弹起不当作设备旋转。离开扫码页停止并释放摄像头。
 
 手机扫码界面紧凑调整（20261029-mobile23）：隐藏常驻提示、记录数和查询栏，三个操作按钮缩至28px高并放在摄像头右侧表单下方。手机扫码结果表体使用9pt字体，表头基础高度39px降为26px。电脑布局、全部原始数据与筛选功能保留；手机仍可使用表头箭头筛选，错误以临时提示显示。
 
-手机横屏（20261029-rotate24）：非扫码页面随设备方向切换，横屏采用1440px桌面布局并按手机屏宽等比例适配；竖屏恢复普通响应式布局。保留原生双指缩放，不监听手势、不限制缩放倍数，不因键盘弹出或用户缩放重复重置视图。扫码报工仍使用原生手机视口与竖屏限制，离开后恢复普通页面方向规则。手机系统自动旋转开关和浏览器自身的方向限制由设备控制。
+手机横屏（20261029-rotate24）：非扫码页面随设备方向切换，横屏采用1440px桌面布局并按手机屏宽等比例适配；竖屏恢复普通响应式布局。保留原生双指缩放，不监听手势、不限制缩放倍数，不因键盘弹出或用户缩放重复重置视图。扫码报工使用原生手机视口及独立横竖屏布局，离开后恢复普通页面方向规则。手机系统自动旋转开关和浏览器自身的方向限制由设备控制。
 
 手机扫码布局（20261029-scan25）：摄像头占左半屏，窗口保持3:5比例，预览视频保持原比例不拉伸；右侧工序、组别、备注等单列排列，操作按钮竖排。手机日期输入隐藏，扫码时自动取当天越南当地日期，避免长时间打开页面后继续使用昨天日期；电脑日期输入照常使用。小屏或软键盘打开时录入区域可单独滚动。
 
@@ -68,13 +68,13 @@ GitHub Settings → Pages → Build and deployment → Source: Deploy from a bra
 
 手机扫码退出（20261029-exit29）：新增居中“生产扫码报工”标题和右上角退出。手动录入字体与表体同为9pt，手机表头基础高度26px缩至18px。每次进入扫码页默认按草稿筛选，已确认记录只隐藏而不删除，可用状态列筛选查看。退出先等待本机数据保存，后台配置且登录后将全部记录及核对状态保存为退出快照；草稿不会因退出而自动变成已确认。后台失败可重试或明确选择仅本机退出；后台未连接时提示尚未上传。退出返回工作台，不退出账号。
 
-手机表格可视高度修复：使用显式表格页类和浏览器实际 innerHeight 填满表格区域，不再依赖部分旧WebView不支持的 :has() 与 dvh；普通手机竖屏查询栏采用固定两行布局，避免查询按钮挤占字段。横屏仍按屏幕宽度等比例适配，允许原生双指缩放，扫码页维持竖屏专用规则。
+手机表格可视高度修复：使用显式表格页类和浏览器实际 innerHeight 填满表格区域，不再依赖部分旧WebView不支持的 :has() 与 dvh；普通手机竖屏查询栏采用固定两行布局，避免查询按钮挤占字段。横屏仍按屏幕宽度等比例适配，允许原生双指缩放，扫码页使用独立横竖屏布局。
 
 上述退出与手机表体高度调整一并在20261029-mobile30发布。正式后台地址仍未配置，未上传时会明确提示，并保存本机记录。
 
 首页语言选择（20261029-language31）：中文／Tieng Viet 只在公司首页显示，工作台与各业务页不再重复显示。选择自动记在当前浏览器，登录、页面切换、弹窗和刷新后均沿用；业务记录及查询字段的内部标识保持原值，扫码状态下拉仅翻译选项文字，仍保存原中文枚举值。
 
-横屏兼容（20261029-rotate32）：方向识别优先使用可视视口实际宽度（visualViewport.width × scale），避免内置浏览器方向属性过期，并且不把软键盘或双指缩放当作设备旋转；补充可视视口、方向媒体查询及延后复查事件。普通手机工作台提供“横屏查看”：支持时通过用户点击进入全屏并锁横屏，可恢复自动旋转；不支持时说明系统自动旋转和内置浏览器限制。进入扫码或首页会释放本功能取得的横屏锁。扫码页继续仅竖屏。表头筛选箭头统一右移、下移至右下角，仍无边框。
+横屏兼容（20261029-rotate32）：方向识别优先使用可视视口实际宽度（visualViewport.width × scale），避免内置浏览器方向属性过期，并且不把软键盘或双指缩放当作设备旋转；补充可视视口、方向媒体查询及延后复查事件。普通手机工作台提供“横屏查看”：支持时通过用户点击进入全屏并锁横屏，可恢复自动旋转；不支持时说明系统自动旋转和内置浏览器限制。进入扫码或首页会释放本功能取得的横屏锁。扫码页已改为支持横屏与竖屏。表头筛选箭头统一右移、下移至右下角，仍无边框。
 
 工作台公司标志移除外框，图标与系统名称放大；中文名称按用户指定改为“佳洋数字化管理系统”。
 
@@ -95,5 +95,9 @@ Sales orders also project `信息录入` before `状态`, saved independently in
 
 ### Readable landscape and transparent shortcuts (2026-10-30)
 
-- Normal phone pages use a fixed 65% initial scale in landscape, regardless of table width. The visible layout follows screen width while fixed-width tables scroll inside their own grid; saved column widths are not redistributed. Native pinch zoom remains unrestricted. Scanner portrait rules are unchanged.
+- Normal phone pages use a fixed 65% initial scale in landscape, regardless of table width. The visible layout follows screen width while fixed-width tables scroll inside their own grid; saved column widths are not redistributed. Native pinch zoom remains unrestricted. Scanner supports both phone orientations using its native-scale responsive layout.
 - Website icons now use only the transparent company symbol. `icons/company-symbol.ico` contains 16/24/32/48/64/128/256-pixel images; browser, manifest and Apple PNG icons retain alpha transparency. Manifest entries use `purpose: any` rather than the previous opaque maskable variants. Device launchers may still apply their own background or mask. Re-add existing shortcuts to refresh cached icon artwork.
+
+### Scan landscape and header borders (2026-10-30)
+
+Scan reporting no longer requests a portrait lock or displays a rotation-blocking overlay. Orientation changes reflow the native-scale mobile layout without stopping the active camera or canceling quantity entry. Other mobile tables retain their fixed 65% landscape scale. All business-grid header cells, including checkbox and information columns, use 1px white borders.
