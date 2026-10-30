@@ -628,3 +628,14 @@ html.phone-device .workspace .sales-order-options{margin-left:0;gap:5px 12px}
 /* Keep an applied column filter visible until that filter is cleared. */
 .workspace #grid th.column-filtered .header-label{color:#fff16b}
 .workspace #grid th .funnel.active{color:#ff3b3b}
+
+/* Clear, high-contrast sales scope choices with persistent selected state. */
+.workspace .sales-order-options{gap:7px;padding:0}
+.workspace .sales-order-options label{gap:7px;min-height:34px;padding:5px 10px;border:1px solid #9bbfe9;border-radius:6px;background:#edf5ff;color:#235b98;font-size:12px;font-weight:600;line-height:22px;transition:background .15s,border-color .15s,color .15s}
+.workspace .sales-order-options label:hover{background:#dbeaff;border-color:#397cce;color:#174881}
+.workspace .sales-order-options label.is-selected{background:#2466b8;border-color:#2466b8;color:#fff}
+.workspace .sales-order-options label.is-selected:hover{background:#1c559c;border-color:#1c559c;color:#fff}
+.workspace .sales-order-options input{width:15px;height:15px;accent-color:#164a8a}
+.workspace .sales-order-options .is-selected input{accent-color:#fff;color-scheme:light}
+.workspace .sales-order-options .is-selected input:focus-visible{outline-color:#fff}
+html.phone-device .workspace .sales-order-options{gap:6px}
