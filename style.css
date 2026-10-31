@@ -838,6 +838,20 @@ body:not(.mobile-scan) .workspace .topbar{padding-bottom:0;align-items:flex-end}
 body:not(.mobile-scan) .workspace .topbar::after{display:none}
 body:not(.mobile-scan) .workspace .topbar #topTabs{align-self:stretch;display:flex;align-items:stretch}
 body:not(.mobile-scan) .workspace #topTabs .table-tabs{width:100%;align-items:flex-end}
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button.active{height:34px;min-height:34px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
+body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button.active{height:31px;min-height:31px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
 body:not(.mobile-scan) .workspace .topbar .workspace-controls{align-self:center;padding-bottom:3px}
 body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-items:flex-end}
+
+/* Spreadsheet ranges, clipboard paste dialog and a plain production-order sheet. */
+.sheet-selecting,.sheet-selecting *{user-select:none!important}
+.workspace #grid tbody td.sheet-range-cell,.wo-table td.sheet-range-cell{background:#e8f5e9!important}
+.sheet-pasting{pointer-events:none;cursor:wait}
+#grid:focus-visible{outline:1px solid #548dd4;outline-offset:-1px}
+.sheet-paste-dialog{width:540px;max-width:calc(100vw - 24px);border:1px solid #9bbfe9;box-shadow:0 15px 50px #183a6322}
+.sheet-paste-dialog textarea{width:100%;height:180px;white-space:pre;font:13px monospace;border:1px solid #9bbfe9;padding:8px}.sheet-paste-dialog p{font-size:13px}.sheet-paste-dialog button{background:#edf5ff;border:1px solid #9bbfe9;color:#235b98;box-shadow:none}
+#modal.workorder-dialog .wo-sheet,#modal.workorder-dialog .wo-table{color:#000}
+#modal.workorder-dialog .wo-table th{position:relative;background:#fff;color:#000;border:1px solid #444;font-weight:400}
+#modal.workorder-dialog .wo-table td{color:#000;border-color:#666}
+.wo-col-resizer{position:absolute;top:0;bottom:0;right:-3px;width:7px;cursor:col-resize;touch-action:none;z-index:2}
+.wo-sort-header{cursor:pointer}.wo-sort-header:focus-visible{outline:1px solid #2869b9;outline-offset:-1px}
+.wo-col-resizer{right:0}
