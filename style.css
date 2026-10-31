@@ -694,8 +694,8 @@ html.phone-device .workspace .sales-order-options{gap:6px}
 @media(max-width:850px){.label-settings-bar{grid-template-columns:repeat(2,minmax(0,1fr))}.label-settings-body{grid-template-columns:1fr}.label-preview-section{padding:1px}}
 
 /* Excel-like active-cell selection uses an outline, not a cell fill. */
-.workspace #grid tbody td[tabindex]:focus{outline:2px solid #2869b9;outline-offset:-2px}
-.workspace #grid tbody td[contenteditable=true]{cursor:text;outline:2px solid #2869b9;outline-offset:-2px}
+.workspace #grid tbody td[tabindex]:focus{outline:1px solid #2869b9;outline-offset:-1px}
+.workspace #grid tbody td[contenteditable=true]{cursor:text;outline:1px solid #2869b9;outline-offset:-1px}
 
 /* Stronger outlines around all four query groups, without raised shadows. */
 .workspace .filters .filter select{border:1px solid #568bc8}
