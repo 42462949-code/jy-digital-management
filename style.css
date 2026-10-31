@@ -791,3 +791,16 @@ body:not(.mobile-scan) .workspace.table-page .topbar{min-height:32px}
 .upload-counts dt{font-size:13px}.upload-counts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
 #modal.upload-dialog .dialogfoot button{box-shadow:none;background:#2466b8;color:#fff;border:1px solid #2466b8;min-width:85px}
 #modal.upload-dialog .dialogfoot button:hover{background:#1c559c}#modal.upload-dialog .dialogfoot button:active{background:#16477f}
+
+/* Each query group has an independent, persisted drag boundary. */
+.workspace .business-panel>.filters>.filter{position:relative;min-width:0}
+.workspace .filters .query-width-handle{position:absolute;right:-4px;top:0;bottom:0;width:9px;z-index:2;cursor:col-resize;touch-action:none;user-select:none}
+.workspace .filters .query-width-handle::after{content:"";position:absolute;top:25%;bottom:25%;left:4px;width:2px;border-radius:1px;background:#7fa9d4}
+.workspace .filters .query-width-handle:hover::after,.workspace .filters .query-width-handle:focus-visible::after{background:#2365c6;width:3px}
+.workspace .filters .query-width-handle:focus-visible{outline:1px solid #2365c6;outline-offset:1px}
+.workspace .business-panel>.filters.has-custom-query-widths{display:flex;flex-wrap:nowrap;align-items:center;overflow-x:auto;overflow-y:hidden}
+.workspace .filters.has-custom-query-widths>.filter{flex:0 0 var(--query-group-width);width:var(--query-group-width)}
+.workspace .filters.has-custom-query-widths>:is(.primary,.reset-query){flex:0 0 auto}
+.workspace .filters.has-custom-query-widths .filter .pair{flex-wrap:nowrap}
+body.resizing-query-width,body.resizing-query-width *{cursor:col-resize!important;user-select:none!important}
+@media(max-width:700px){.workspace .business-panel>.filters.has-custom-query-widths{flex-wrap:wrap}.workspace .filters.has-custom-query-widths .filter select{width:40%}.workspace .filters.has-custom-query-widths .filter input{width:60%}}
