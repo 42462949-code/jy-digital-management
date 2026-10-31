@@ -210,6 +210,9 @@ function deleteProductionGroups(){if(current!==9||!selected.size){toast('请先�
 function beginSalesWorkOrders(){const picked=[...selected].filter(index=>db[0][index]).map(index=>db[0][index]);if(!picked.length){toast('请在左侧勾选需要下推的订单');return}const rows=picked.filter(row=>!['关闭','已关闭','已完成'].includes(String(row[0]??'').trim())&&!db[1].some(work=>workOrderIdentity(work)===String(row[21]||`${row[5]} / ${row[6]}`)));if(!rows.length&&!jyStorage.getJSON('jy-workorder-draft-v1',null)){toast('所选订单已关闭、完成或已下达生产工单');return}window.JYWorkOrders.openSelection(rows,picked.length-rows.length)}
 function workOrderColumns(){const previous=current;try{current=1;return prefs().map(column=>({...column}))}finally{current=previous}}
 function salesWorkOrderSourceIdentity(row){return String(row[21]||`${row[5]} / ${row[6]}`)}
+function formatWorkPrintQuantity(value){return String(value).replace(/[,，\s]/g,'').replace(/(\.\d*?[1-9])0+$|\.0+$/,'$1')}
+function formatSalesWorkPrintHistory(value){if(typeof value!=='string')return value;return value.split('\n').map(line=>line.replace(/^(泡棉|贴合)\+(\d{4}\/\d{1,2}\/\d{1,2})\+(\d+(?:\.\d+)?)\r?$/,(_,type,date,quantity)=>type+date+'：'+formatWorkPrintQuantity(quantity)).replace(/^(泡棉|贴合)(\d{4}\/\d{1,2}\/\d{1,2})[：:]\s*(\d+(?:\.\d+)?)\r?$/,(_,type,date,quantity)=>type+date+'：'+formatWorkPrintQuantity(quantity))).join('\n')}
+async function normalizeSalesWorkPrintHistory(){const column=SALES_TEMPLATE.fields.findIndex(field=>field.key==='工单已打印数');if(column<0)return 0;const old=db[0];let count=0;const next=old.map(row=>{const value=formatSalesWorkPrintHistory(row[column]);if(value===row[column])return row;count++;const copy=row.slice();copy[column]=value;return copy});if(!count)return 0;try{db[0]=next;save();await jyStorage.flush()}catch(error){db[0]=old;save();await jyStorage.flush().catch(()=>{});throw error}if(current===0&&$('#grid'))drawTable();return count}
 function workOrderConfirmationDate(){const parts=Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()).map(part=>[part.type,part.value]));return `${parts.year}/${Number(parts.month)}/${Number(parts.day)}`}
 async function commitSalesWorkOrders(draft){
  const old=db[1],oldSales=db[0],infoKey=informationKey(1),oldInfo=jyStorage.getItem(infoKey),oldFlag=jyStorage.getItem('jy-local-imported-1'),oldDraft=jyStorage.getItem('jy-workorder-draft-v1'),rows=draft.rows.map(row=>row.values.slice(1)),seen=new Set(old.map(workOrderIdentity));
@@ -222,7 +225,7 @@ async function commitSalesWorkOrders(draft){
   const type=String(row[13]??'').trim(),quantity=String(row[8]??'').replace(/[,，\s]/g,'');
   if(!['泡棉','贴合'].includes(type))throw Error('工单生产类型须为泡棉或贴合');
   if(!quantity||!Number.isFinite(Number(quantity))||Number(quantity)<=0)throw Error('工单数量须大于0');
-  const position=matches[0],sale=nextSales[position].slice(),previous=String(sale[printedColumn]??'').trim(),entry=[type,confirmationDate,quantity].join('+');
+  const position=matches[0],sale=nextSales[position].slice(),previous=formatSalesWorkPrintHistory(String(sale[printedColumn]??'').trim()),entry=type+confirmationDate+'：'+formatWorkPrintQuantity(quantity);
   sale[printedColumn]=previous?previous+'\n'+entry:entry;nextSales[position]=sale;
  });
  const info=jyStorage.getJSON(infoKey,{});draft.rows.forEach(row=>Object.defineProperty(info,informationIdentity(row.values.slice(1),1),{value:String(row.values[0]??''),writable:true,enumerable:true,configurable:true}));

@@ -838,7 +838,7 @@ body:not(.mobile-scan) .workspace .topbar{padding-bottom:0;align-items:flex-end}
 body:not(.mobile-scan) .workspace .topbar::after{display:none}
 body:not(.mobile-scan) .workspace .topbar #topTabs{align-self:stretch;display:flex;align-items:stretch}
 body:not(.mobile-scan) .workspace #topTabs .table-tabs{width:100%;align-items:flex-end}
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button.active{height:31px;min-height:31px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
+body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button.active{height:29px;min-height:29px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
 body:not(.mobile-scan) .workspace .topbar .workspace-controls{align-self:center;padding-bottom:3px}
 body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-items:flex-end}
 
