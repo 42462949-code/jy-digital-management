@@ -778,3 +778,16 @@ body:not(.mobile-scan) .workspace.table-page .topbar{min-height:32px}
  .workspace #grid::-webkit-scrollbar-thumb:active{background:#235b98}
  .workspace #grid::-webkit-scrollbar-corner{background:#eaf1f8}
 }
+
+/* Upload instructions and an acknowledged, persistent completion summary. */
+#modal.upload-dialog{width:520px;max-width:calc(100vw - 24px);max-height:calc(100dvh - 32px);overflow:auto;padding:24px;color:#254e7b;border:1px solid #b7d1ea}
+.upload-help ol{padding-left:22px;margin:0;line-height:1.8;font-size:13px}
+.upload-help li{margin-bottom:10px}
+.upload-help p,.upload-result p{font-size:13px;line-height:1.7;color:#59728c}
+.upload-file{overflow-wrap:anywhere;margin-top:-8px}
+.upload-counts{margin:18px 0;border:1px solid #cfdfef;border-radius:7px;overflow:hidden}
+.upload-counts>div{display:flex;justify-content:space-between;gap:16px;padding:10px 12px;border-bottom:1px solid #e3edf7}
+.upload-counts>div:last-child{border:0;background:#edf5ff;font-weight:600}
+.upload-counts dt{font-size:13px}.upload-counts dd{margin:0;font-weight:600;font-variant-numeric:tabular-nums}
+#modal.upload-dialog .dialogfoot button{box-shadow:none;background:#2466b8;color:#fff;border:1px solid #2466b8;min-width:85px}
+#modal.upload-dialog .dialogfoot button:hover{background:#1c559c}#modal.upload-dialog .dialogfoot button:active{background:#16477f}
