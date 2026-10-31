@@ -855,3 +855,17 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 .wo-col-resizer{position:absolute;top:0;bottom:0;right:-3px;width:7px;cursor:col-resize;touch-action:none;z-index:2}
 .wo-sort-header{cursor:pointer}.wo-sort-header:focus-visible{outline:1px solid #2869b9;outline-offset:-1px}
 .wo-col-resizer{right:0}
+
+/* Reference-format pending production order, shared with the A4 print projection. */
+#modal.workorder-dialog .wo-sheet{color:#000}
+#modal.workorder-dialog .wo-document-title h2{font-size:28px;line-height:1.12}
+#modal.workorder-dialog .wo-document-title h2+h2{font-size:27px;margin:3px 0 5px;color:red}
+#modal.workorder-dialog .wo-document-meta{align-items:center;font-size:14px;font-weight:700;gap:12px;margin-bottom:5px}
+#modal.workorder-dialog .wo-order-date{color:red}
+#modal.workorder-dialog .wo-machine-value{display:inline-block;min-width:25mm;margin-left:2mm;text-align:center;border-bottom:1px solid red}
+#modal.workorder-dialog .wo-table{font:9pt Arial,'Microsoft YaHei',sans-serif}
+#modal.workorder-dialog .wo-table th,#modal.workorder-dialog .wo-table td{border:1px solid #00ae98;padding:2px;line-height:1.25;color:#000}
+#modal.workorder-dialog .wo-table th{background:#fff;vertical-align:middle;font-weight:400;white-space:normal}
+#modal.workorder-dialog .wo-table tbody tr{height:23mm}
+#modal.workorder-dialog .wo-table td{vertical-align:top}
+#modal.workorder-dialog .wo-row-handle{font:inherit}
