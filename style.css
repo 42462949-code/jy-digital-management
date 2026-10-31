@@ -872,3 +872,6 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 
 #modal.workorder-dialog .wo-document-title{position:relative}
 #modal.workorder-dialog .wo-company-logo{position:absolute;left:0;top:0;width:38mm;height:15mm;object-fit:contain}
+
+/* Invisible splitter at the field-name / keyword boundary, retaining both outer grips. */
+.workspace .filters .query-width-divider{left:calc(var(--query-divider-position) - 5px);right:auto;width:10px;background:transparent}
