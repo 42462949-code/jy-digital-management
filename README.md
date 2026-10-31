@@ -109,3 +109,5 @@ Scan reporting no longer requests a portrait lock or displays a rotation-blockin
 - Idle shutdown saves unsubmitted entries as local drafts through the existing queued/rollback-capable storage operation. Submitted entries keep their state and receipts. Pending quantity input remains open; finishing it still saves a draft. Failed saves are reported rather than claimed successful. Manual stop, exit and background camera release cancel the inactivity timer.
 
 临时表上传核对（20261031-sync74）：按上传有效行（含未发货数量为0的行）的订单子表ID匹配销售订单，数量→订单数量、累计发货数量、未发货数量、预发货日期→客户交期、生产工艺以临时表为准；不新增未匹配销售订单。核对后销售订单未发货数量为0则状态改为“关闭”，业务筛选和下推兼容“关闭”与“已关闭”。临时表仍剔除零数量订单并整体替换、不备份；两表一起保存，失败时一起恢复。重复非空ID提示失败，空白ID不匹配。成功窗口显示匹配、修正字段、关闭及未匹配数量，确认后关闭。
+
+临时表中转流程（20261031-transfer75，替代 sync74）：有效上传数据全部进入临时表中转，含零数量订单。按订单子表ID新增缺失销售订单（同名字段复制，数量→订单数量、预发货日期→客户交期、主计量单位→单位，其余字段留空）；已有ID只核对五个规定字段。核对后全部销售订单数值零余额统一关闭，最后清空临时表。两表同次保存且失败回滚，不产生旧数据备份。结果：读取=忽略+剔除空白ID+保留处理，原未匹配=新增+剔除空白ID；原已匹配不含新增。重复非空ID拒绝，重复上传不产生重复销售订单。
