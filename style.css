@@ -760,3 +760,9 @@ body:not(.mobile-scan) .workspace #grid .header-label{line-height:12px;padding-t
 
 /* Lower the page navigation by another third, keeping readable text labels. */
 body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button{height:20px;min-height:20px;padding-top:0;padding-bottom:0;line-height:18px;border-radius:5px}
+
+/* Business pages start directly with text navigation; homepage and login branding remain. */
+body:not(.mobile-scan) .workspace .topbar{height:auto;min-height:32px;padding-top:4px;padding-bottom:4px;flex-wrap:nowrap;gap:12px}
+body:not(.mobile-scan) .workspace.table-page .topbar{min-height:32px}
+.workspace .topbar #topTabs{order:0;flex:1 1 0;min-width:0;height:auto;margin-top:0}
+.workspace .topbar .workspace-controls{order:1;width:auto;flex:0 0 auto;margin-left:0}
