@@ -804,3 +804,10 @@ body:not(.mobile-scan) .workspace.table-page .topbar{min-height:32px}
 .workspace .filters.has-custom-query-widths .filter .pair{flex-wrap:nowrap}
 body.resizing-query-width,body.resizing-query-width *{cursor:col-resize!important;user-select:none!important}
 @media(max-width:700px){.workspace .business-panel>.filters.has-custom-query-widths{flex-wrap:wrap}.workspace .filters.has-custom-query-widths .filter select{width:40%}.workspace .filters.has-custom-query-widths .filter input{width:60%}}
+
+/* Left and right query fields keep independent saved pixel widths. */
+.workspace .filters .query-width-left{left:0;right:auto}
+.workspace .filters .query-width-right{right:0;left:auto}
+.workspace .filters.has-split-query-widths .filter select{width:var(--query-left-width);min-width:0;max-width:none;flex:0 0 var(--query-left-width)}
+.workspace .filters.has-split-query-widths .filter input{width:var(--query-right-width);min-width:0;max-width:none;flex:0 0 var(--query-right-width)}
+.workspace .filters .query-width-handle::after{content:none}
