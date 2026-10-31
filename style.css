@@ -766,3 +766,15 @@ body:not(.mobile-scan) .workspace .topbar{height:auto;min-height:32px;padding-to
 body:not(.mobile-scan) .workspace.table-page .topbar{min-height:32px}
 .workspace .topbar #topTabs{order:0;flex:1 1 0;min-width:0;height:auto;margin-top:0}
 .workspace .topbar .workspace-controls{order:1;width:auto;flex:0 0 auto;margin-left:0}
+
+/* Larger, higher contrast scrollbars for the table in both directions. */
+.workspace #grid{scrollbar-width:auto;scrollbar-color:#628fc2 #eaf1f8}
+@supports selector(::-webkit-scrollbar){
+ .workspace #grid{scrollbar-color:auto}
+ .workspace #grid::-webkit-scrollbar{width:16px;height:16px}
+ .workspace #grid::-webkit-scrollbar-track{background:#eaf1f8;border:1px solid #d0deed}
+ .workspace #grid::-webkit-scrollbar-thumb{background:#628fc2;border:3px solid #eaf1f8;border-radius:8px;min-height:36px;min-width:36px}
+ .workspace #grid::-webkit-scrollbar-thumb:hover{background:#3c74b2}
+ .workspace #grid::-webkit-scrollbar-thumb:active{background:#235b98}
+ .workspace #grid::-webkit-scrollbar-corner{background:#eaf1f8}
+}
