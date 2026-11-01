@@ -16,7 +16,7 @@ def setup():
     store = Store(url)
     store.initialize()
     with store.connect(write=True) as con:
-        con.execute('TRUNCATE jy_audit,jy_sessions,jy_records,jy_drafts,jy_migrations,jy_users,jy_roles,jy_login_attempts RESTART IDENTITY CASCADE')
+        con.execute('TRUNCATE jy_daily_business_snapshot,jy_business_settings,jy_audit,jy_sessions,jy_records,jy_drafts,jy_migrations,jy_users,jy_roles,jy_login_attempts RESTART IDENTITY CASCADE')
     store.initialize()
     store.bootstrap('admin', 'Initial-test-password')
     app = create_app(Config(url, 'http://testserver', False))
@@ -426,14 +426,15 @@ def test_confirmed_document_print_is_read_only_complete_and_permission_checked(s
 
 def test_production_report_carries_document_number_and_preserves_old_fields(setup):
     app,admin,store=setup
-    team=create(admin,9,['1','生产','PROD#','','',''])
-    work=create(admin,1,['2026/11/1','PROD#','客户','SO','PO','产品','','58','100',0,'Y','备注','PROD-SALE','贴合','MO-261101-01'])
-    response=admin.post('/api/work-orders/generate-reports',json={'ids':[work['id']]})
+    team=create(admin,9,['1','贴合','PROD#','','',''])
+    work=create(admin,1,['2026/11/1','PROD#','客户','SO','PO','产品','','58','100',0,'Y','备注','PROD-SALE','贴合','MO-261101-01'],information='25')
+    payload={'requestId':str(uuid.uuid4()),'records':[{'id':work['id'],'version':work['version'],'information':'25'}],'date':'2026-11-01','department':'贴合','teamId':team['id']}
+    response=admin.post('/api/work-orders/generate-reports',json=payload)
     assert response.status_code==200,response.text
     report=admin.get('/api/tables/2').json()['records'][0]
-    assert len(report['values'])==18 and report['values'][17]=='MO-261101-01'
+    assert len(report['values'])==20 and report['values'][17]=='MO-261101-01'
     assert report['values'][3]=='100' and report['values'][12]=='PROD-SALE'
-    assert admin.post('/api/work-orders/generate-reports',json={'ids':[work['id']]}).json()['ids']==[]
+    assert admin.post('/api/work-orders/generate-reports',json=payload).json()['ids']==response.json()['ids']
     from psycopg.types.json import Jsonb
     legacy=report['values'][:17];legacy[7:11]=['3','5','保留原因','原责任人']
     with store.connect(write=True) as con:
@@ -522,7 +523,7 @@ def test_scan_confirm_creates_production_exactly_once_and_checks_scope_atomicall
         assert scanner.post('/api/scan/submit',json=payload).status_code==200
         reports=admin.get('/api/tables/2').json()['records'];assert len(reports)==1
         report=reports[0]
-        assert report['values']==['2026-11-01','客户','产品','','TRANSFER-A','12.5','Y','','','','','备注','TRANSFER-SALE','2026-11-01 10:20:30','','','贴合','MO-261101-01']
+        assert report['values']==['2026-11-01','客户','产品','','TRANSFER-A','12.5','Y','','','','','备注','TRANSFER-SALE','2026-11-01 10:20:30','','','贴合','MO-261101-01','','']
         assert report['meta']['sourceScanId']==first['id']
         scans={r['id']:r for r in admin.get('/api/tables/8').json()['records']}
         assert scans[first['id']]['meta']['productionReportId']==report['id']
@@ -548,3 +549,184 @@ def test_scanner_team_reference_includes_department_without_unassigned_team_acce
         changed=assigned['values'].copy();changed[1]='泡棉'
         assert admin.post('/api/sync',json={'changes':[{'id':assigned['id'],'table':9,'version':assigned['version'],'values':changed}]}).status_code==200
         assert scanner.get('/api/auth/me').json()['teams'][0]['department']=='泡棉'
+
+
+def test_attendance_unique_identity_derived_hours_and_actor_are_authoritative(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','贴合','ATT-A','','',''])
+    values=['2026-10-31','ATT-A','8','2','1','','','','','',str(uuid.uuid4()),'伪造部门','forged','1900-01-01']
+    first=create(admin,4,values);second=create(admin,4,values)
+    assert first['values'][10]==first['id'] and second['values'][10]==second['id'] and first['id']!=second['id']
+    assert first['values'][5:7]==['11','13']
+    assert first['values'][11]=='贴合' and first['values'][12]=='admin' and first['values'][13]!='1900-01-01'
+    before=first['values'].copy();changed=before.copy();changed[2]='10';changed[6]='999'
+    response=admin.post('/api/sync',json={'changes':[{'id':first['id'],'table':4,'version':first['version'],'values':changed}]})
+    assert response.status_code==200,response.text
+    updated=response.json()['records'][0];assert updated['values'][5:7]==['13','15'] and updated['values'][10:]==before[10:]
+    assert admin.post('/api/sync',json={'changes':[{'id':first['id'],'table':4,'version':first['version'],'values':before}]}).status_code==409
+    # A separate new row has its own version/identity and never overwrites another leader's entry.
+    assert len(admin.get('/api/tables/4').json()['records'])==2
+
+
+def test_price_review_controls_four_field_match_and_locks_approved_rows(setup):
+    app,admin,_=setup
+    create(admin,9,['1','贴合','PRICE-A','','',''])
+    values=['','客户A','材料A','58','产品A','VND','1.25','']
+    price=create(admin,10,values)
+    work=create(admin,1,['2026-11-01','PRICE-A','客户A','SO','PO','产品A','材料A','58','100',0,'Y','','PRICE-ID','贴合','MO-261101-01'])
+    def scan(spec='58'):
+        return create(admin,8,['2026-10-31 10:20:30','2026-10-31','贴合','PRICE-A','客户A','PO','产品A',spec,'4','','MO-261101-01','PRICE-ID'],meta={'unit':'wrong'})
+    first=scan();assert admin.post('/api/scan/submit',json={'ids':[first['id']]}).status_code==200
+    report=admin.get('/api/tables/2').json()['records'][0];assert report['values'][18:]==['',''] and report['values'][6]=='Y'
+    payload={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':price['id'],'version':price['version']}]}
+    approved=admin.post('/api/price-list/review',json=payload);assert approved.status_code==200,approved.text
+    assert admin.post('/api/price-list/review',json=payload).json()==approved.json()
+    current=approved.json()['records'][0];assert current['meta']['priceStatus']=='已审核'
+    assert admin.post('/api/sync',json={'changes':[{'id':price['id'],'table':10,'version':current['version'],'values':price['values']}]}).status_code==403
+    assert admin.post('/api/sync',json={'changes':[{'id':price['id'],'table':10,'version':current['version'],'delete':True}]}).status_code==403
+    duplicate=create(admin,10,values)
+    assert admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':duplicate['id'],'version':duplicate['version']}]}).status_code==409
+    second=scan();assert admin.post('/api/scan/submit',json={'ids':[second['id']]}).status_code==200
+    reports=admin.get('/api/tables/2').json()['records'];matched=next(r for r in reports if r['meta'].get('sourceScanId')==second['id'])
+    assert matched['values'][18:]==['1.25','5'] and matched['meta']['priceId']==price['id']
+    stored_work=admin.get('/api/tables/1').json()['records'][0];assert stored_work['values'][9]=='8'
+    assert admin.post('/api/scan/submit',json={'ids':[second['id']]}).status_code==200
+    assert admin.get('/api/tables/1').json()['records'][0]['values'][9]=='8'
+    # A manually filled price recomputes amount and ignores a client-forged total.
+    missing=next(r for r in reports if r['meta'].get('sourceScanId')==first['id']);v=missing['values'].copy();v[18]='0.3';v[19]='999'
+    result=admin.post('/api/sync',json={'changes':[{'id':missing['id'],'table':2,'version':missing['version'],'values':v}]})
+    assert result.status_code==200 and result.json()['records'][0]['values'][19]=='1.2'
+    reversed=admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':False,'records':[{'id':price['id'],'version':current['version']}]})
+    assert reversed.status_code==200 and reversed.json()['records'][0]['meta']['priceStatus']=='未审核'
+
+
+def test_entered_work_quantity_reports_validate_and_commit_atomically(setup):
+    app,admin,_=setup
+    team=create(admin,9,['1','泡棉','MANUAL-A','','',''])
+    price=create(admin,10,['','客户','MAT','58','产品','VND','0.3',''])
+    admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':price['id'],'version':1}]})
+    work=create(admin,1,['2026-11-01','MANUAL-A','客户','SO','PO','产品','MAT','58','20','0','Y','','MANUAL-ID','泡棉','MO-261101-02'],information='5')
+    payload={'requestId':str(uuid.uuid4()),'records':[{'id':work['id'],'version':1,'information':'5'}],'date':'2026-10-31','department':'泡棉','teamId':team['id']}
+    result=admin.post('/api/work-orders/generate-reports',json=payload);assert result.status_code==200,result.text
+    report=admin.get('/api/tables/2').json()['records'][0]
+    assert report['values'][0]=='2026-10-31' and report['values'][4:7]==['MANUAL-A','5','Y'] and report['values'][16:] == ['泡棉','MO-261101-02','0.3','1.5']
+    row=admin.get('/api/tables/1').json()['records'][0];assert row['information']=='' and row['values'][9]=='5'
+    assert admin.post('/api/work-orders/generate-reports',json=payload).json()==result.json()
+    assert len(admin.get('/api/tables/2').json()['records'])==1
+    missing={**payload,'requestId':str(uuid.uuid4()),'records':[{'id':work['id'],'version':row['version'],'information':''}]}
+    assert admin.post('/api/work-orders/generate-reports',json=missing).status_code==400
+    assert len(admin.get('/api/tables/2').json()['records'])==1
+
+
+def test_hourly_output_snapshots_respect_ten_am_cutoff_and_raw_amounts(setup,monkeypatch):
+    import datetime as dt
+    import enterprise.business_workflows as workflow
+    app,admin,_=setup
+    create(admin,9,['1','贴合','OUTPUT-A','','',''])
+    create(admin,4,['2026-10-01','OUTPUT-A','8','2','1','','','','',''])
+    values=['2026-10-01','客户','产品','','OUTPUT-A','4','Y','','','','','','','2026-10-01 09:00:00','','','贴合','','25','']
+    prod=create(admin,2,values)
+    create(admin,2,['2026-10-02',*values[1:]])
+    monkeypatch.setattr(workflow,'now_local',lambda:dt.datetime(2026,10,3,9,59,tzinfo=workflow.UTC7))
+    first=admin.get('/api/reports/hourly-output?month=2026-10');assert first.status_code==200,first.text
+    assert first.json()['cutoff']=='2026-10-01' and first.json()['hours']['2026-10-01']=='13'
+    assert first.json()['amounts']=={'2026-10-01':'100'}
+    changed=prod['values'].copy();changed[18]='50'
+    admin.post('/api/sync',json={'changes':[{'id':prod['id'],'table':2,'version':1,'values':changed}]})
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['amounts']['2026-10-01']=='100'
+    monkeypatch.setattr(workflow,'now_local',lambda:dt.datetime(2026,10,3,10,0,tzinfo=workflow.UTC7))
+    second=admin.get('/api/reports/hourly-output?month=2026-10').json()
+    assert second['cutoff']=='2026-10-02' and second['amounts']=={'2026-10-01':'200','2026-10-02':'100'}
+    assert admin.post('/api/reports/hourly-output/target',json={'month':'2026-10','target':'42.5'}).status_code==200
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['target']=='42.5'
+
+
+def test_new_inventory_tables_do_not_change_original_tables(setup):
+    app,admin,_=setup
+    old_stock=create(admin,5,['产品','原仓','OLD-CODE','旧规格','10','9','Y','A1','2026-10-01'])
+    old_ledger=create(admin,6,['OLD-DOC','原仓','入库','OLD-CODE','产品','旧规格','10','Y','2026-10-01','原经办人'])
+    new_stock=create(admin,12,['1','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10',''])
+    new_ledger=create(admin,13,['2026-10-02','NEW-DOC','入库','贴合','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10','','2026-10-02 10:00:00'])
+    assert admin.get('/api/tables/5').json()['records'][0]['values']==old_stock['values']
+    assert admin.get('/api/tables/6').json()['records'][0]['values']==old_ledger['values']
+    assert len(new_stock['values'])==15 and len(new_ledger['values'])==19
+
+
+def test_attendance_two_leaders_preserve_independent_rows_and_scope(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    app,admin,_=setup
+    team=create(admin,9,['1','贴合','SHARED-A','','',''])
+    role=admin.post('/api/admin/roles',json={'name':'独立考勤录入','permissions':{'4':{'scope':'own','actions':['view','create','update']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id')
+    for name in ['leader-a','leader-b']:user(admin,name,[role_id],[team['id']])
+    with TestClient(app) as first,TestClient(app) as second:
+        login(first,'leader-a',change=True);login(second,'leader-b',change=True)
+        values=['2026-10-31','SHARED-A','8','2','1','','','','','']
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a=pool.submit(create,first,4,values);b=pool.submit(create,second,4,values);a,b=a.result(),b.result()
+        assert a['id']!=b['id'] and a['values'][10]!=b['values'][10]
+        assert a['values'][12]=='leader-a' and b['values'][12]=='leader-b'
+        assert first.get('/api/tables/4').json()['records'][0]['id']==a['id']
+        assert len(admin.get('/api/tables/4').json()['records'])==2
+        assert second.post('/api/sync',json={'changes':[{'id':a['id'],'table':4,'version':1,'values':a['values']}]}).status_code==403
+
+
+def test_price_audit_permissions_and_duplicate_batch_are_atomic(setup):
+    app,admin,_=setup
+    first=create(admin,10,['','客户','MAT','58','产品','VND','1',''])
+    duplicate=create(admin,10,['','客户','MAT','58','产品','VND','2',''])
+    editor=admin.post('/api/admin/roles',json={'name':'价格维护','permissions':{'10':{'scope':'all','actions':['view','update']}}}).json()
+    auditor=admin.post('/api/admin/roles',json={'name':'价格审核','permissions':{'10':{'scope':'all','actions':['view','approve_price','unapprove_price']}}}).json()
+    eid=editor.get('id') or editor['role']['id'];aid=auditor.get('id') or auditor['role']['id']
+    user(admin,'price-editor',[eid]);user(admin,'price-auditor',[aid])
+    def payload(rows):return {'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':r['id'],'version':r['version']} for r in rows]}
+    with TestClient(app) as edit,TestClient(app) as review:
+        login(edit,'price-editor',change=True);login(review,'price-auditor',change=True)
+        assert edit.post('/api/price-list/review',json=payload([first])).status_code==403
+        assert review.post('/api/sync',json={'changes':[{'id':first['id'],'table':10,'version':1,'values':first['values']}]}).status_code==403
+        assert review.post('/api/price-list/review',json=payload([first,duplicate])).status_code==409
+        assert all(r['meta']['priceStatus']=='未审核' for r in admin.get('/api/tables/10').json()['records'])
+        assert review.post('/api/price-list/review',json=payload([first])).status_code==200
+        role=next(r for r in admin.get('/api/admin/roles').json()['roles'] if str(r['id'])==str(aid))
+        assert admin.post('/api/admin/roles',json={**role,'permissions':{'10':{'scope':'all','actions':['view']}}}).status_code==200
+        assert review.post('/api/price-list/review',json=payload([duplicate])).status_code==403
+
+
+def test_frozen_hourly_snapshot_has_shared_target_and_scoped_totals(setup,monkeypatch):
+    import datetime as dt
+    import enterprise.business_workflows as workflow
+    app,admin,_=setup
+    team_a=create(admin,9,['1','贴合','SCOPE-A','','','']);team_b=create(admin,9,['2','泡棉','SCOPE-B','','',''])
+    a=create(admin,4,['2026-10-01','SCOPE-A','8','0','0','','','','',''])
+    create(admin,4,['2026-10-01','SCOPE-B','20','0','0','','','','',''])
+    read=admin.post('/api/admin/roles',json={'name':'组别统计','permissions':{'11':{'scope':'teams','actions':['view']}}}).json()
+    rid=read.get('id') or read['role']['id'];user(admin,'report-reader',[rid],[team_a['id']])
+    monkeypatch.setattr(workflow,'now_local',lambda:dt.datetime(2026,10,3,10,0,tzinfo=workflow.UTC7))
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['hours']['2026-10-01']=='28'
+    changed=a['values'].copy();changed[2]='80'
+    assert admin.post('/api/sync',json={'changes':[{'id':a['id'],'table':4,'version':1,'values':changed}]}).status_code==200
+    with TestClient(app) as reader:
+        login(reader,'report-reader',change=True)
+        assert reader.get('/api/tables/4').status_code==403
+        assert reader.get('/api/reports/hourly-output?month=2026-10&action=export').status_code==403
+        scoped=reader.get('/api/reports/hourly-output?month=2026-10').json()
+        assert scoped['hours']=={'2026-10-01':'8'}
+        assert 'groups' not in scoped
+        assert reader.post('/api/reports/hourly-output/target',json={'month':'2026-10','target':'999'}).status_code==403
+        assert admin.post('/api/reports/hourly-output/target',json={'month':'2026-10','target':'42'}).status_code==200
+        assert reader.get('/api/reports/hourly-output?month=2026-10').json()['target']=='42'
+
+
+def test_legacy_migration_skips_empty_attendance_and_resolves_team(setup):
+    _,admin,_=setup
+    tables=[[] for _ in range(10)]
+    tables[9]=[['1','贴合','MIG-A','','','']]
+    tables[4]=[['']*10,['2026-10-31','MIG-A','8','2','1','','','','','']]
+    data={'tables':tables,'information':{},'scanMeta':[]}
+    preview=admin.post('/api/admin/migration/preview',json=data)
+    assert preview.status_code==200,preview.text
+    assert preview.json()['counts']['4']==1
+    response=admin.post('/api/admin/migration/commit',json={'data':data,'digest':preview.json()['digest']})
+    assert response.status_code==200,response.text
+    row=admin.get('/api/tables/4').json()['records'][0]
+    assert row['teamId'] and row['values'][11]=='贴合' and row['values'][6]=='13'

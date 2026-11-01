@@ -102,8 +102,10 @@ def register_workflows(app, store):
             require(con,user,4,'view')
             if not scopes(con,user,4,'update') and not scopes(con,user,4,'create'):
                 fail(403,'没有维护生产组别的权限')
-            rows=con.execute("SELECT values_json->>2 AS name FROM jy_records WHERE table_id=9 AND btrim(values_json->>2)<>'' ORDER BY values_json->>2").fetchall()
-            return {'names':list(dict.fromkeys(row['name'].strip() for row in rows))}
+            rows=con.execute("SELECT id,values_json FROM jy_records WHERE table_id=9 AND btrim(values_json->>2)<>'' ORDER BY values_json->>2").fetchall()
+            allowed=scopes(con,user,4,'create')|scopes(con,user,4,'update')
+            teams=[{'id':str(row['id']),'name':str(row['values_json'][2]).strip(),'department':str(row['values_json'][1]).strip()} for row in rows if 'all' in allowed or str(row['id']) in user['team_ids']]
+            return {'names':list(dict.fromkeys(team['name'] for team in teams)),'teams':teams}
 
     @app.post('/api/labels/jobs/{job_id}/consume')
     async def consume_labels(job_id: str, request: Request):
@@ -362,17 +364,8 @@ def register_workflows(app, store):
         data=await body(request)
         with store.connect(write=True) as con:
             user,_=current_user(request,con)
-            ids=data.get('ids',[])
-            if not isinstance(ids,list) or not ids: fail(400,'请先选择生产工单')
-            output=[]
-            for record_id in set(ids):
-                work=record_by_id(con,record_id,1); require(con,user,1,'generate_report',work)
-                v=work['values_json']; sid=str(v[12])
-                if con.execute("SELECT 1 FROM jy_records WHERE table_id=2 AND meta->>'sourceWorkId'=%s LIMIT 1",(str(work['id']),)).fetchone(): continue
-                values=[dt.datetime.now(UTC7).strftime('%Y-%m-%d'),v[2],v[5],v[8],v[1],0,v[10],'','','','',v[11],sid,dt.datetime.now(dt.timezone.utc).isoformat(),'','',v[13],v[14] or '']
-                created=insert_record(con,user,2,values,meta={'sourceWorkId':str(work['id'])},team_id=work['team_id'],action='work.generate_report')
-                output.append(str(created['id']))
-            return {'ids':output}
+            from .business_workflows import generate_work_reports
+            return generate_work_reports(con,user,data)
 
     @app.post('/api/scan/submit')
     async def submit_scan(request: Request):
@@ -381,7 +374,7 @@ def register_workflows(app, store):
             user,_=current_user(request,con); ids=data.get('ids',[])
             if not isinstance(ids,list) or not 1<=len(ids)<=200: fail(400,'每次提交1至200条扫码记录')
             if any(not isinstance(value,str) for value in ids) or (data.get('versions') is not None and not isinstance(data['versions'],dict)): fail(400,'扫码记录参数无效')
-            accepted=[]; now=dt.datetime.now(dt.timezone.utc).isoformat()
+            accepted=[]; changed_sources={}; now=dt.datetime.now(dt.timezone.utc).isoformat()
             for record_id in sorted(set(ids)):
                 row=con.execute('SELECT * FROM jy_records WHERE id=%s AND table_id=8 FOR UPDATE',(uid(record_id),)).fetchone()
                 if not row: fail(404,'记录不存在或不可访问')
@@ -397,13 +390,26 @@ def register_workflows(app, store):
                     if not quantity.is_finite() or quantity<0: raise InvalidOperation()
                 except (InvalidOperation,ValueError): fail(400,'数量无效')
                 values=[v[1],v[4],v[6],'',v[3],v[8],row['meta'].get('unit',''),'','','','',v[9],v[11],v[0],'','',v[2],v[10]]
-                report=insert_record(con,user,2,values,meta={'sourceScanId':str(row['id'])},team_id=row['team_id'],action='scan.generate_report')
+                from .business_rules import work_for_id,apply_price
+                source=work_for_id(con,v[11],v[10])
+                if source:
+                    require(con,user,1,'view',source)
+                    values[6]=source['values_json'][10]
+                values,report_meta=apply_price(con,values,{'sourceScanId':str(row['id']),'spec':v[7]},source)
+                report=insert_record(con,user,2,values,meta=report_meta,team_id=row['team_id'],action='scan.generate_report')
+                if source:
+                    from .business_rules import decimal as exact_decimal,text as exact_text
+                    updated=source['values_json'].copy()
+                    with localcontext() as context:
+                        context.prec=150;updated[9]=exact_text(exact_decimal(updated[9],True)+exact_decimal(v[8]))
+                    con.execute('UPDATE jy_records SET values_json=%s,meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(updated),Jsonb({**source['meta'],**work_state(updated,source['meta'].get('workStatus'))}),source['id']))
+                if source:changed_sources[str(source['id'])]=source['id']
                 con.execute('UPDATE jy_records SET owner_id=%s,department=%s WHERE id=%s',(row['owner_id'],row['department'],report['id']))
-                meta={**row['meta'],'submittedAt':row['meta'].get('submittedAt') or now,'reviewStatus':'已确认','productionReportId':str(report['id'])}
+                meta={**row['meta'],'unit':values[6],'submittedAt':row['meta'].get('submittedAt') or now,'reviewStatus':'已确认','productionReportId':str(report['id'])}
                 con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(meta),row['id']))
                 audit(con,user,'scan.submit',8,str(row['id']),after={'submittedAt':meta['submittedAt'],'productionReportId':str(report['id'])})
                 accepted.append(str(row['id']))
-            return {'acceptedIds':accepted,'submittedAt':now}
+            return {'acceptedIds':accepted,'submittedAt':now,'records':[public_record(record_by_id(con,identifier,1)) for identifier in changed_sources.values()]}
 
     @app.post('/api/sales/import')
     async def upload_sales(request: Request):
@@ -523,14 +529,15 @@ def register_workflows(app, store):
 
     def migration_preview(data):
         tables=data.get('tables'); information=data.get('information',{}); scan_meta=data.get('scanMeta',[])
-        if not isinstance(tables,list) or len(tables)!=10 or not isinstance(information,dict) or not isinstance(scan_meta,list): fail(400,'迁移文件格式无效')
+        if not isinstance(tables,list) or len(tables) not in [10,11,12,14] or not isinstance(information,dict) or not isinstance(scan_meta,list): fail(400,'迁移文件格式无效')
         counts,conflicts,warnings={},[],[]
         if tables[3]:warnings.append('临时表中转记录仅保留在原备份，不作为正式业务数据迁入；请先核对原系统上传结果')
         for table in BUSINESS_TABLES:
-            rows=tables[table]
+            rows=tables[table] if table<len(tables) else []
             if not isinstance(rows,list) or len(rows)>100000: fail(400,'迁移记录数量无效')
-            counts[str(table)]=len(rows); seen=set()
+            counts[str(table)]=sum(1 for v in rows if not (table==4 and isinstance(v,list) and not any(str(x or '').strip() for x in v[:10]))); seen=set()
             for index,values in enumerate(rows):
+                if table==4 and isinstance(values,list) and not any(str(x or "").strip() for x in values[:10]):continue
                 validate_values(table,values)
                 if table in (0,9):
                     value=str(values[{0:21,1:12,9:2}[table]]).strip()
@@ -562,7 +569,8 @@ def register_workflows(app, store):
                 record=insert_record(con,user,9,values,action='migration.record');teams[str(values[2]).strip()]=str(record['id'])
             for table in [t for t in BUSINESS_TABLES if t!=9]:
                 info=data.get('information',{}).get(str(table),{})
-                for index,values in enumerate(tables[table]):
+                for index,values in enumerate(tables[table] if table<len(tables) else []):
+                    if table==4 and isinstance(values,list) and not any(str(x or '').strip() for x in values[:10]):continue
                     identity=(str(values[21]) if values[21] else ' / '.join(str(values[i]) for i in [5,6,8,10])) if table==0 else str(values[12]) if table==1 else ''
                     metadata={}
                     if table==8:
@@ -580,7 +588,7 @@ def register_workflows(app, store):
                             if isinstance(link.get('documentNo'),str): metadata['documentNo']=link['documentNo']
                             if isinstance(link.get('preparer'),str): metadata['preparer']=link['preparer']
                             if type(link.get('documentRow')) is int and link['documentRow']>=0: metadata['documentRow']=link['documentRow']
-                    team=teams.get(str(values[{1:1,2:4,8:3}[table]]).strip()) if table in [1,2,8] else None
+                    team=teams.get(str(values[{1:1,2:4,4:1,8:3}[table]]).strip()) if table in [1,2,4,8] else None
                     insert_record(con,user,table,validate_values(table,values),info.get((data.get('workRowIdentities',[])[index].get('key') if table==1 and index<len(data.get('workRowIdentities',[])) and data['workRowIdentities'][index].get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else identity),''),metadata,team,action='migration.record')
             migration_id=str(uuid.uuid4())
             con.execute('INSERT INTO jy_migrations(id,actor_id,source_label,digest,counts) VALUES(%s,%s,%s,%s,%s)',

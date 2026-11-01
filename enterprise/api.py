@@ -1,4 +1,5 @@
 """Same-origin enterprise API; local/browser permissions are never trusted."""
+import asyncio
 import datetime as dt
 import hashlib
 import json
@@ -126,7 +127,8 @@ def visible_rows(con, user, table, action='view'):
 
 
 def validate_values(table, values):
-    if table==2 and isinstance(values,list) and len(values)==17: values=values+['']
+    if table==2 and isinstance(values,list) and len(values) in [17,18]: values=values+['']*(20-len(values))
+    if table==4 and isinstance(values,list) and len(values)==10: values=values+['']*4
     if table==8 and isinstance(values,list) and len(values)==10: values=values+['','']
     if table==1 and isinstance(values,list) and len(values)==14: values=values+['']
     if table not in BUSINESS_TABLES or not isinstance(values, list) or len(values) != len(CATALOG[str(table)]['fields']):
@@ -153,11 +155,22 @@ def resolve_team(con, user, table, values, action, prior=None):
 
 
 def insert_record(con, user, table, values, information='', meta=None, team_id=None, action='record.create', record_id=None):
-    if table==2 and len(values)==17: values=values+['']
+    if table==2 and len(values) in [17,18]: values=values+['']*(20-len(values))
+    if table==4 and len(values)==10:values=values+['']*4
     if table==8 and len(values)==10: values=values+['','']
     if table==1 and len(values)==14: values=values+[(meta or {}).get('documentNo','')]
     if table==1: meta={**(meta or {}),**work_state(values,(meta or {}).get('workStatus'))}
     record_id = uid(record_id) if record_id else str(uuid.uuid4())
+    from .business_rules import attendance,production,price
+    try:
+        if table==2:values=production(values)
+        if table==4:
+            team=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(team_id,)).fetchone() if team_id else None
+            values=attendance(values,record_id,user['username'],department=team['values_json'][1] if team else values[11])
+        if table==10:
+            values,price_key=price(values,record_id);meta={**(meta or {}),'priceStatus':'未审核','priceKey':price_key}
+    except ValueError as error:fail(400,str(error))
+
     con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                 (record_id, table, Jsonb(values), normalize_information(information), Jsonb(meta or {}), user['id'], user['department'], team_id))
     audit(con, user, action, table, record_id, after={'values': values, 'information': information})
@@ -202,7 +215,14 @@ def create_app(config=None):
                 empty = not con.execute('SELECT 1 FROM jy_users LIMIT 1').fetchone()
             if empty:
                 store.bootstrap(cfg.bootstrap_username, cfg.bootstrap_password)
-        yield
+        from .business_workflows import snapshot_worker
+        worker=asyncio.create_task(snapshot_worker(store))
+        try:
+            yield
+        finally:
+            worker.cancel()
+            try:await worker
+            except asyncio.CancelledError:pass
 
     app = FastAPI(title='Jiayang Enterprise', docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.store, app.state.config = store, cfg
@@ -393,7 +413,7 @@ def create_app(config=None):
             if not isinstance(permissions, dict):
                 fail(400, '权限格式无效')
             for table, grant in permissions.items():
-                if table not in [str(t) for t in BUSINESS_TABLES+[7]] or not isinstance(grant, dict):
+                if table not in [str(t) for t in BUSINESS_TABLES+[7,11]] or not isinstance(grant, dict):
                     fail(400, '权限表无效')
                 actions = grant.get('actions', [])
                 if not isinstance(actions, list) or any(a not in ACTIONS for a in actions) or grant.get('scope') not in ['own', 'teams', 'department', 'all']:
@@ -481,6 +501,7 @@ def create_app(config=None):
                     fail(409, '记录已被他人修改，请刷新后重新编辑')
                 if not old and change.get('version') not in (None, 0):
                     fail(409, '记录已被删除，请刷新')
+                if old and table==10 and old['meta'].get('priceStatus')=='已审核':fail(403,'已审核单价不可修改或删除，请先反审')
                 if old and table == 8 and old['meta'].get('submittedAt'):
                     fail(403, '已提交扫码记录不可修改或删除')
                 if action == 'delete':
@@ -511,7 +532,7 @@ def create_app(config=None):
                     meta={**(old['meta'] if old else {}),**meta}
                     if number(values[8]) < 0: fail(400, '扫码数量不能为负数')
                 if old:
-                    locked = {0:[0,21,26], 1:[0,1,10,12,13,14], 2:[12], 5:[2], 6:[0]}.get(table, [])
+                    locked = {0:[0,21,26], 1:[0,1,10,12,13,14], 2:[12], 4:[10,12,13],10:[0], 5:[2], 6:[0]}.get(table, [])
                     if any(str(values[i]) != str(old['values_json'][i]) for i in locked):
                         fail(403, '系统字段必须通过相应业务动作维护')
                 elif table == 0 and str(values[26]).strip():
@@ -521,6 +542,17 @@ def create_app(config=None):
                 if table == 9 and any(str(r['values_json'][2]).strip() == str(values[2]).strip() and str(r['id']) != record_id for r in con.execute('SELECT id,values_json FROM jy_records WHERE table_id=9').fetchall()):
                     fail(409, '生产班组名称不能重复')
                 team = resolve_team(con, user, table, values, action, old)
+                from .business_rules import attendance,production,price
+                try:
+                    if table==2:values=production(values)
+                    if table==4:
+                        master=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(team,)).fetchone() if team else None
+                        if not master or not str(master['values_json'][1]).strip():fail(400,'请先维护生产班组的部门')
+                        values=attendance(values,record_id,user['username'],prior=old['values_json'] if old else None,department=master['values_json'][1])
+                    if table==10:
+                        values,price_key=price(values,record_id);meta={**meta,'priceKey':price_key,'priceStatus':old['meta'].get('priceStatus','未审核') if old else '未审核'}
+                except ValueError as error:fail(400,str(error))
+
                 if not old:
                     require(con,user,table,'create',{'owner_id':user['id'],'department':user['department'],'team_id':team})
                 if old:
@@ -543,6 +575,8 @@ def create_app(config=None):
     # Dedicated transactional workflow routes are registered separately.
     from .workflows import register_workflows
     register_workflows(app, store)
+    from .business_workflows import register_business_workflows
+    register_business_workflows(app,store)
 
     @app.get('/runtime-config.js')
     def runtime_config():

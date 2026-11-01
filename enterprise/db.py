@@ -16,9 +16,9 @@ from argon2 import PasswordHasher
 CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text())
 ACTIONS = ['view', 'create', 'update', 'delete', 'import', 'export', 'label_print',
            'report_print', 'close_order', 'reopen_order', 'generate_work', 'generate_report',
-           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust']
+           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price']
 PASSWORDS = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
-BUSINESS_TABLES = [0, 1, 2, 4, 5, 6, 8, 9]
+BUSINESS_TABLES = [0, 1, 2, 4, 5, 6, 8, 9, 10,12,13]
 TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
 UTC7 = dt.timezone(dt.timedelta(hours=7))
 
@@ -48,6 +48,9 @@ CREATE INDEX IF NOT EXISTS jy_records_owner ON jy_records(table_id,owner_id);
 CREATE INDEX IF NOT EXISTS jy_records_team ON jy_records(table_id,team_id);
 CREATE UNIQUE INDEX IF NOT EXISTS jy_sales_source_unique ON jy_records ((btrim(values_json->>21)))
  WHERE table_id=0 AND btrim(values_json->>21)<>'';
+CREATE UNIQUE INDEX IF NOT EXISTS jy_price_approved_key ON jy_records ((meta->>'priceKey')) WHERE table_id=10 AND meta->>'priceStatus'='已审核';
+CREATE TABLE IF NOT EXISTS jy_business_settings(name text PRIMARY KEY,payload jsonb NOT NULL);
+CREATE TABLE IF NOT EXISTS jy_daily_business_snapshot(cutoff text PRIMARY KEY,payload jsonb NOT NULL,created_at timestamptz NOT NULL DEFAULT now());
 CREATE TABLE IF NOT EXISTS jy_drafts (
  id uuid PRIMARY KEY, owner_id uuid NOT NULL REFERENCES jy_users(id), team_id uuid,
  payload jsonb NOT NULL, version integer NOT NULL DEFAULT 1,
@@ -94,6 +97,20 @@ class Store:
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\",\"\"]'::jsonb WHERE table_id=8 AND jsonb_array_length(values_json)=10")
             con.execute("UPDATE jy_records SET values_json=values_json || jsonb_build_array(COALESCE(meta->>'documentNo','')) WHERE table_id=1 AND jsonb_array_length(values_json)=14")
             con.execute("UPDATE jy_records production SET values_json=jsonb_set(production.values_json,'{17}',to_jsonb(COALESCE(work.values_json->>14,''))) FROM jy_records work WHERE production.table_id=2 AND work.table_id=1 AND production.meta->>'sourceWorkId'=work.id::text AND COALESCE(production.values_json->>17,'')=''")
+            from .business_rules import production,stamp
+            for record in con.execute('SELECT * FROM jy_records WHERE table_id=ANY(%s)',([2,4],)).fetchall():
+                old=record['values_json'];values=old
+                if record['table_id']==2:
+                    try: values=production(old)
+                    except ValueError: values=(old+['',''])[:20]
+                elif record['table_id']==4 and len(old)==10:
+                    dept=''
+                    if record['team_id']:
+                        team=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(record['team_id'],)).fetchone()
+                        if team:dept=team['values_json'][1]
+                    owner=con.execute('SELECT username FROM jy_users WHERE id=%s',(record['owner_id'],)).fetchone()
+                    values=old+[str(record['id']),dept,owner['username'] if owner else '',stamp(record['created_at'])]
+                if values!=old:con.execute('UPDATE jy_records SET values_json=%s,version=version+1 WHERE id=%s',(Jsonb(values),record['id']))
             from .work_state import work_state
             for work in con.execute('SELECT id,values_json,meta FROM jy_records WHERE table_id=1').fetchall():
                 updated={**work['meta'],**work_state(work['values_json'],work['meta'].get('workStatus'))}
@@ -148,7 +165,7 @@ def role_templates():
     yield '班组报工员', '本班组工单与本人报工', reporter, False
     yield '仓库人员', '库存及出入库维护', grants([5, 6], ['view', 'create', 'update', 'import', 'inventory_adjust']), False
     yield '人事人员', '考勤资料维护', grants([4], ['view', 'create', 'update', 'delete', 'import', 'export']), False
-    yield '管理只读', '查看业务表与看板，导出另行授权', grants([0, 1, 2, 5, 6, 7, 9], ['view']), False
+    yield '管理只读', '查看业务表与看板，导出另行授权', grants([0, 1, 2, 5, 6, 7, 9,10,11], ['view']), False
 
 
 def role_rows(con, user):
@@ -188,7 +205,7 @@ def public_record(record):
 
 def effective_permissions(con, user):
     return {str(t): {action: sorted(scopes(con, user, t, action)) for action in ACTIONS}
-            for t in BUSINESS_TABLES + [7]}
+            for t in BUSINESS_TABLES + [7,11]}
 
 
 def canonical(value):
