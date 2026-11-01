@@ -284,7 +284,7 @@ def register_workflows(app, store):
             rows=row['payload']['rows']
             if rows and row['printed_version']!=row['version']: fail(409,'请先打印当前版本，再核对并确定')
             work_ids=[]; confirmation_day=dt.datetime.now(UTC7).strftime('%Y/%-m/%-d')
-            for entry in rows:
+            for position,entry in enumerate(rows):
                 sale=record_by_id(con,entry['sourceRecordId'],0); require(con,user,0,'generate_work',sale)
                 if str(sale['values_json'][0]).strip() in ['关闭','已关闭','已完成']:
                     fail(409,'销售订单已关闭或完成，不能继续确定工单')
@@ -293,7 +293,7 @@ def register_workflows(app, store):
                 remaining=remaining_quantity(con,sale['values_json'])
                 if Decimal(str(values[8]).replace(',','').replace('，','').strip())>remaining: fail(409,'本次工单数量超过剩余可下达数量，请重新生成或调整')
                 log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
-                work=insert_record(con,user,1,values,entry['values'][0],meta={'printHistory':{'sourceId':sid,'entry':log},'documentNo':row['payload']['documentNo']},team_id=row['team_id'],action='work.confirm')
+                work=insert_record(con,user,1,values,entry['values'][0],meta={'printHistory':{'sourceId':sid,'entry':log},'documentNo':row['payload']['documentNo'],'preparer':row['payload'].get('preparer',''),'documentRow':position},team_id=row['team_id'],action='work.confirm')
                 work_ids.append(str(work['id']))
                 v=sale['values_json'].copy(); previous=str(v[26] or '').strip()
                 log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
@@ -303,6 +303,19 @@ def register_workflows(app, store):
             con.execute('UPDATE jy_drafts SET completed_at=now(),committed_ids=%s WHERE id=%s',(Jsonb(work_ids),row['id']))
             audit(con,user,'work.draft.confirm',1,str(row['id']),after={'workIds':work_ids,'version':row['version']})
             return {'ids':work_ids,'alreadyConfirmed':False}
+
+    @app.post('/api/work-orders/print-document')
+    async def print_document(request: Request):
+        data=await body(request)
+        with store.connect(write=True) as con:
+            user,_=current_user(request,con);require(con,user,1,'report_print')
+            document_no=text(data.get('documentNo'),'工单号',200)
+            rows=con.execute("SELECT * FROM jy_records WHERE table_id=1 AND btrim(values_json->>14)=%s ORDER BY CASE WHEN meta->>'documentRow' ~ '^[0-9]+$' THEN (meta->>'documentRow')::bigint END NULLS LAST,created_at,id",(document_no,)).fetchall()
+            if not rows:fail(404,'未找到该工单号对应的明细')
+            for row in rows:require(con,user,1,'report_print',row)
+            preparers={row['meta'].get('preparer') for row in rows if row['meta'].get('preparer')}
+            audit(con,user,'work.document.print_requested' if data.get('phase')=='print' else 'work.document.preview',1,after={'documentNo':document_no,'ids':[str(row['id']) for row in rows]})
+            return {'records':[public_record(row) for row in rows],'preparer':next(iter(preparers)) if len(preparers)==1 else ''}
 
     @app.post('/api/work-orders/generate-reports')
     async def generate_reports(request: Request):
@@ -511,6 +524,8 @@ def register_workflows(app, store):
                         if isinstance(link,dict) and isinstance(link.get('entry'),str) and isinstance(link.get('sourceId'),str):
                             metadata['printHistory']={'sourceId':link['sourceId'],'entry':link['entry']}
                             if isinstance(link.get('documentNo'),str): metadata['documentNo']=link['documentNo']
+                            if isinstance(link.get('preparer'),str): metadata['preparer']=link['preparer']
+                            if type(link.get('documentRow')) is int and link['documentRow']>=0: metadata['documentRow']=link['documentRow']
                     team=teams.get(str(values[{1:1,2:4,8:3}[table]]).strip()) if table in [1,2,8] else None
                     insert_record(con,user,table,validate_values(table,values),info.get((data.get('workRowIdentities',[])[index].get('key') if table==1 and index<len(data.get('workRowIdentities',[])) and data['workRowIdentities'][index].get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else identity),''),metadata,team,action='migration.record')
             migration_id=str(uuid.uuid4())

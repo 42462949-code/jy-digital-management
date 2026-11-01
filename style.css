@@ -901,3 +901,10 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 #modal.workorder-dialog .wo-document-number{position:absolute;right:0;bottom:3px;font:14px Arial,'Microsoft YaHei',sans-serif;white-space:nowrap;color:#000}
 #modal.workorder-dialog .wo-order-qr{display:block;width:20mm;max-width:100%;height:auto;aspect-ratio:1;margin:0 auto}
 #modal.workorder-dialog .wo-table .wo-qr-cell{padding:1mm;text-align:center}
+
+.workspace .actions .workorder-print-action span{display:inline!important}
+.workorder-readonly{height:100%;display:flex;flex-direction:column;min-height:0;color:#254e7b}
+.workorder-readonly .wo-toolbar{align-items:center;border-bottom:1px solid #d5e5f4}
+.workorder-readonly .wo-readonly-notice{flex:1;font-size:12px;color:#637c97}
+.workorder-readonly .wo-readonly-frame{display:block;width:100%;flex:1;min-height:0;border:0;background:#fff}
+.workorder-readonly .error{margin:0 12px}

@@ -396,3 +396,29 @@ def test_scan_work_number_and_order_id_survive_submit_and_legacy_upgrade(setup):
     upgraded=admin.get('/api/tables/8').json()['records'][0]
     assert upgraded['values']==values[:10]+['','']
     assert upgraded['meta']==stored['meta']
+
+
+def test_confirmed_document_print_is_read_only_complete_and_permission_checked(setup):
+    app,admin,store=setup
+    a=create(admin,9,['1','生产','PRINT-A','','','']);b=create(admin,9,['2','生产','PRINT-B','','',''])
+    def work(source,number,team):
+        return create(admin,1,['2026/11/1','PRINT-'+team,'客户','SO-'+source,'PO','产品','','58','10',0,'Y','',source,'贴合',number])
+    first=work('ONE','MO-261101-01','A');second=work('TWO','MO-261101-01','A');work('OTHER','MO-261101-02','A')
+    role=admin.post('/api/admin/roles',json={'name':'仅打印工单','permissions':{'1':{'scope':'teams','actions':['view','report_print']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id');user(admin,'printer',[role_id],[a['id']])
+    with TestClient(app) as printer:
+        login(printer,'printer',change=True)
+        response=printer.post('/api/work-orders/print-document',json={'documentNo':'MO-261101-01'})
+        assert response.status_code==200,response.text
+        assert {r['id'] for r in response.json()['records']}=={first['id'],second['id']}
+        assert printer.post('/api/sync',json={'changes':[{'id':first['id'],'table':1,'version':first['version'],'values':first['values']}]}).status_code==403
+        # A single inaccessible line blocks the entire document rather than printing a partial report.
+        work('HIDDEN','MO-261101-01','B')
+        assert printer.post('/api/work-orders/print-document',json={'documentNo':'MO-261101-01'}).status_code==403
+        assert printer.post('/api/work-orders/print-document',json={'documentNo':'MISSING'}).status_code==404
+        # Removing print permission is effective again when the print button is clicked.
+        stored=next(r for r in admin.get('/api/admin/roles').json()['roles'] if r['id']==role_id)
+        assert admin.post('/api/admin/roles',json={'id':role_id,'version':stored['version'],'name':stored['name'],'permissions':{'1':{'scope':'teams','actions':['view']}}}).status_code==200
+        assert printer.post('/api/work-orders/print-document',json={'documentNo':'MO-261101-02','phase':'print'}).status_code==403
+    records=admin.get('/api/tables/1').json()['records']
+    assert all(r['version']==1 and r['values'][8]=='10' for r in records)
