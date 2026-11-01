@@ -890,7 +890,7 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 
 .workspace [hidden],#modal [hidden]{display:none!important}
 
-/* The internal landing page intentionally has no content yet. */
+/* Internal home page heading and content container. */
 .management-home-heading{padding:18px 20px 10px}
 .management-home-heading h1{margin:0;color:#194777;font-size:24px;line-height:1.5}
 .management-home-page #topActions{display:none}

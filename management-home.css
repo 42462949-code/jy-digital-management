@@ -1,0 +1,33 @@
+/* Homepage guide only: keep business-table layout and controls unchanged. */
+.management-home-overview{--guide-ink:#263e58;--guide-blue:#245f9f;--guide-muted:#587088;--guide-line:#dce7f1;box-sizing:border-box;width:100%;max-width:1840px;margin:0 auto;padding:36px clamp(20px,3.2vw,64px) 48px;color:var(--guide-ink);font-family:'Microsoft YaHei','PingFang SC',sans-serif;overflow-wrap:anywhere}
+.management-home-overview *{box-sizing:border-box}
+.management-home-overview .management-guide-intro{display:block;position:static;width:auto;height:auto;min-height:0;overflow:visible;border:0;background:transparent;margin:0 0 28px;padding:0 0 6px}
+.management-home-overview .management-guide-eyebrow{margin:0 0 12px;color:var(--guide-blue);font-size:13px;font-weight:700;line-height:1.6;letter-spacing:1.5px}
+.management-home-overview h2{display:flex;flex-wrap:wrap;gap:0 14px;margin:0;font-size:clamp(23px,2.1vw,34px);line-height:1.65;font-weight:700;letter-spacing:.3px;color:#163f6b}
+.management-home-overview h2 span{display:block}
+.management-home-overview .management-guide-rule{width:52px;height:4px;margin-top:20px;border-radius:3px;background:#548dd4}
+.management-home-overview .management-guide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:stretch}
+.management-home-overview .management-guide-card{min-width:0;padding:26px 28px 28px;border:1px solid var(--guide-line);border-radius:12px;background:#fff;box-shadow:0 3px 12px #19477704}
+.management-home-overview .management-guide-card-heading{display:flex;position:static;width:auto;height:auto;min-height:0;justify-content:flex-start;align-items:center;background:transparent;gap:13px;margin:0 0 23px;padding-bottom:19px;border-bottom:1px solid #e7eef5}
+.management-home-overview .management-guide-number{display:inline-flex;flex:0 0 40px;width:40px;height:40px;align-items:center;justify-content:center;border-radius:10px;background:#edf4fc;color:#2865a9;font:700 15px/1 'Microsoft YaHei','PingFang SC',sans-serif;letter-spacing:.6px}
+.management-home-overview h3{margin:0;color:#194777;font-size:21px;line-height:1.45;font-weight:700;letter-spacing:.3px}
+.management-home-overview h4{margin:0 0 4px;font-size:16px;line-height:1.7;font-weight:700;color:#263e58}
+.management-home-overview p{margin:0;font-size:15px;line-height:1.95;color:var(--guide-muted)}
+.management-home-overview .management-guide-steps{counter-reset:guide-step;display:grid;gap:19px;margin:0;padding:0;list-style:none}
+.management-home-overview .management-guide-steps>li{position:relative;min-width:0;margin:0;padding-left:30px;counter-increment:guide-step}
+.management-home-overview .management-guide-steps>li:before{content:counter(guide-step,decimal-leading-zero);position:absolute;left:0;top:2px;color:#6083a9;font-size:12px;font-weight:700;line-height:2.1;font-variant-numeric:tabular-nums}
+.management-home-overview .management-guide-attendance{grid-column:1/-1;background:#f8fbff}
+.management-home-overview .management-guide-attendance .management-guide-card-heading{margin-bottom:20px}
+.management-home-overview .management-guide-attendance-content{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr);align-items:stretch;gap:36px}
+.management-home-overview .management-guide-reminder{display:flex;position:static;inset:auto;width:auto;height:auto;min-width:0;min-height:0;flex-shrink:1;flex-direction:column;justify-content:center;gap:7px;padding:15px 20px;border-left:3px solid #548dd4;border-radius:0 7px 7px 0;background:#edf4fc}
+.management-home-overview .management-guide-reminder>span{color:#245f9f;font-size:13px;font-weight:700;line-height:1.6;letter-spacing:.6px}
+.management-home-overview .management-guide-reminder p{color:#32577d;font-size:15px;line-height:1.9;font-weight:600}
+.management-home-overview .management-guide-output{background:linear-gradient(120deg,#f8fbff,#fff 75%)}
+.management-home-overview .management-guide-output-intro{margin:0 0 17px}
+.management-home-overview .management-guide-reports{display:grid;gap:13px;margin:0;padding:0;list-style:none}
+.management-home-overview .management-guide-reports li{position:relative;margin:0;padding-left:21px;color:#3c5e81;font-size:15px;line-height:1.8}
+.management-home-overview .management-guide-reports li:before{content:'';position:absolute;left:2px;top:10px;width:6px;height:6px;border:1px solid #548dd4;border-radius:2px;background:#dbeafe}
+@media(min-width:1900px){.management-home-overview{padding-top:44px}.management-home-overview .management-guide-card{padding:30px 34px 32px}.management-home-overview p,.management-home-overview .management-guide-reports li{font-size:16px}.management-home-overview h4{font-size:17px}}
+@media(max-width:950px){.management-home-overview{padding:26px 22px 34px}.management-home-overview .management-guide-grid{gap:16px}.management-home-overview .management-guide-card{padding:22px 20px}.management-home-overview .management-guide-attendance-content{grid-template-columns:1fr;gap:18px}.management-home-overview h3{font-size:19px}.management-home-overview h4{font-size:15px}.management-home-overview p{font-size:14px}}
+@media(max-width:700px){.management-home-overview{padding:24px 14px 30px}.management-home-overview .management-guide-intro{margin-bottom:22px}.management-home-overview .management-guide-eyebrow{font-size:11px;letter-spacing:1px;margin-bottom:10px}.management-home-overview h2{display:block;font-size:24px;line-height:1.65;letter-spacing:0}.management-home-overview h2 span+span{margin-top:2px}.management-home-overview .management-guide-rule{margin-top:16px}.management-home-overview .management-guide-grid{grid-template-columns:1fr;gap:15px}.management-home-overview .management-guide-card{padding:20px 17px 22px;border-radius:9px}.management-home-overview .management-guide-card-heading{gap:11px;margin-bottom:18px;padding-bottom:16px}.management-home-overview .management-guide-number{flex-basis:34px;width:34px;height:34px;border-radius:8px;font-size:13px}.management-home-overview h3{font-size:19px}.management-home-overview h4{font-size:15px}.management-home-overview p,.management-home-overview .management-guide-reports li{font-size:14px;line-height:1.95}.management-home-overview .management-guide-steps{gap:17px}.management-home-overview .management-guide-steps>li{padding-left:26px}.management-home-overview .management-guide-reminder{padding:13px 15px}.management-home-overview .management-guide-reminder p{font-size:14px}}
+@media print{.management-home-overview{max-width:none;padding:0;color:#000}.management-home-overview .management-guide-card{box-shadow:none;break-inside:avoid}.management-home-overview .management-guide-intro{break-after:avoid}.management-home-overview .management-guide-grid{gap:16px}}
