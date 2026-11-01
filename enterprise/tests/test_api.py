@@ -441,3 +441,57 @@ def test_production_report_carries_document_number_and_preserves_old_fields(setu
     store.initialize()
     upgraded=admin.get('/api/tables/2').json()['records'][0]
     assert upgraded['values'][:17]==legacy and upgraded['values'][17]=='MO-261101-01'
+
+
+def test_work_owing_auto_closes_exactly_and_stays_closed_without_repeat_updates(setup):
+    app,admin,store=setup
+    values=['2026/11/1','','客户','SO','PO','产品','','58','0.3','0.2','Y','','STATE-SALE','贴合','MO-261101-01']
+    work=create(admin,1,values)
+    assert work['meta']['workStatus']=='审核' and work['meta']['workOwing']=='0.1'
+    values[9]='0.3'
+    response=admin.post('/api/sync',json={'changes':[{'id':work['id'],'table':1,'version':work['version'],'values':values}]})
+    assert response.status_code==200,response.text
+    closed=response.json()['records'][0]
+    assert closed['meta']['workStatus']=='关闭' and closed['meta']['workOwing']=='0'
+    version=closed['version'];store.initialize();store.initialize()
+    stable=admin.get('/api/tables/1').json()['records'][0]
+    assert stable['version']==version
+    values[9]='0.1'
+    response=admin.post('/api/sync',json={'changes':[{'id':work['id'],'table':1,'version':version,'values':values,'meta':{'workStatus':'审核','workOwing':'999'}}]})
+    adjusted=response.json()['records'][0]
+    assert adjusted['meta']['workStatus']=='关闭' and adjusted['meta']['workOwing']=='0.2'
+    assert len(adjusted['values'])==15
+    from enterprise.work_state import work_state
+    blank=values.copy();blank[8]='';blank[9]=''
+    assert work_state(blank)=={'workStatus':'审核','workOwing':''}
+    over=values.copy();over[8]='100';over[9]='120'
+    assert work_state(over)=={'workStatus':'审核','workOwing':'-20'}
+
+
+def test_work_manual_close_reopen_is_scoped_atomic_and_idempotent(setup):
+    app,admin,store=setup
+    base=['2026/11/1','','客户','SO','PO','产品','','58','100','20','Y','','CLOSE-A','贴合','MO-261101-01']
+    a=create(admin,1,base);done=base.copy();done[12]='CLOSE-B';done[9]='100';b=create(admin,1,done)
+    role=admin.post('/api/admin/roles',json={'name':'工单结案专员','permissions':{'1':{'scope':'all','actions':['view','close_order','reopen_order']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id');user(admin,'work-closer',[role_id])
+    with TestClient(app) as closer:
+        login(closer,'work-closer',change=True)
+        payload={'requestId':str(uuid.uuid4()),'reopen':False,'records':[{'id':a['id'],'version':a['version']},{'id':b['id'],'version':b['version']}]}
+        response=closer.post('/api/work-orders/closure',json=payload)
+        assert response.status_code==200,response.text
+        closed=response.json();assert closed['changed']==1
+        assert closer.post('/api/work-orders/closure',json=payload).json()==closed
+        records={r['id']:r for r in closed['records']}
+        assert records[a['id']]['meta']['workStatus']=='关闭' and records[b['id']]['version']==b['version']
+        reopened=closer.post('/api/work-orders/closure',json={'reopen':True,'records':[{'id':r['id'],'version':r['version']} for r in records.values()]}).json()
+        assert reopened['changed']==1 and reopened['skippedCompleted']==1
+        records={r['id']:r for r in reopened['records']}
+        assert records[a['id']]['meta']['workStatus']=='审核' and records[b['id']]['meta']['workStatus']=='关闭'
+        failure=closer.post('/api/work-orders/closure',json={'reopen':False,'records':[{'id':a['id'],'version':records[a['id']]['version']},{'id':b['id'],'version':999}]})
+        assert failure.status_code==409
+        actual={r['id']:r for r in closer.get('/api/tables/1').json()['records']}
+        assert actual[a['id']]['meta']['workStatus']=='审核'
+        assert actual[a['id']]['values']==a['values'] and actual[b['id']]['values']==b['values']
+        assert closer.post('/api/sync',json={'changes':[{'id':a['id'],'table':1,'version':actual[a['id']]['version'],'values':a['values']}]}).status_code==403
+    entries=admin.get('/api/admin/audit?action=work.close').json()['entries']
+    assert len(entries)==1

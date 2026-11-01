@@ -9,6 +9,7 @@ from decimal import Decimal, InvalidOperation, localcontext
 from fastapi import Request
 from psycopg.types.json import Jsonb
 
+from .work_state import work_state
 from .db import BUSINESS_TABLES, CATALOG, UTC7, audit, canonical, in_scope, is_admin, public_record, scopes
 
 
@@ -304,6 +305,45 @@ def register_workflows(app, store):
             audit(con,user,'work.draft.confirm',1,str(row['id']),after={'workIds':work_ids,'version':row['version']})
             return {'ids':work_ids,'alreadyConfirmed':False}
 
+    @app.post('/api/work-orders/closure')
+    async def change_work_closure(request: Request):
+        data=await body(request)
+        if type(data.get('reopen')) is not bool:fail(400,'工单操作无效')
+        entries=data.get('records')
+        if not isinstance(entries,list) or not 1<=len(entries)<=50000:fail(400,'请先勾选生产工单')
+        action='reopen_order' if data['reopen'] else 'close_order'
+        with store.connect(write=True) as con:
+            user,_=current_user(request,con);require(con,user,1,action)
+            request_id=uid(data['requestId']) if data.get('requestId') else None
+            signature=hashlib.sha256(canonical(data).encode()).hexdigest()
+            prior=con.execute('SELECT * FROM jy_requests WHERE id=%s',(request_id,)).fetchone() if request_id else None
+            if prior:
+                if str(prior['actor_id'])!=str(user['id']) or prior['signature']!=signature:fail(409,'保存请求标识已使用')
+                current=[]
+                for record in prior['response_json']['records']:
+                    row=record_by_id(con,record['id'],1);require(con,user,1,action,row);current.append(public_record(row))
+                return prior['response_json']|{'records':current}
+            seen=set();output=[];changed=skipped=0
+            for entry in entries:
+                if not isinstance(entry,dict):fail(400,'工单记录无效')
+                row=record_by_id(con,entry.get('id'),1);require(con,user,1,action,row)
+                if str(row['id']) in seen:fail(400,'勾选工单重复')
+                seen.add(str(row['id']))
+                if entry.get('version')!=row['version']:fail(409,'工单已被他人修改，请重新载入后再操作')
+                derived=work_state(row['values_json'],row['meta'].get('workStatus'))
+                target='审核' if data['reopen'] else '关闭'
+                if data['reopen'] and derived['workOwing']=='0':
+                    skipped+=1;output.append(public_record(row));continue
+                if derived['workStatus']==target:
+                    output.append(public_record(row));continue
+                metadata={**row['meta'],**derived,'workStatus':target}
+                con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(metadata),row['id']))
+                audit(con,user,'work.reopen' if data['reopen'] else 'work.close',1,str(row['id']),before={'status':derived['workStatus']},after={'status':target})
+                changed+=1;output.append(public_record(record_by_id(con,row['id'],1)))
+            result={'records':output,'changed':changed,'skippedCompleted':skipped}
+            if request_id:con.execute('INSERT INTO jy_requests(id,actor_id,signature,response_json) VALUES(%s,%s,%s,%s)',(request_id,user['id'],signature,Jsonb(result)))
+            return result
+
     @app.post('/api/work-orders/print-document')
     async def print_document(request: Request):
         data=await body(request)
@@ -519,6 +559,7 @@ def register_workflows(app, store):
                     if table==1:
                         identities=data.get('workRowIdentities',[])
                         prior=identities[index] if index<len(identities) else {}
+                        if prior.get('status') in ['审核','关闭','已关闭']: metadata['workStatus']='关闭' if prior['status'] in ['关闭','已关闭'] else '审核'
                         links=data.get('workPrintLinks',{})
                         link=links.get(prior.get('key')) if isinstance(links,dict) and prior.get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else None
                         if isinstance(link,dict) and isinstance(link.get('entry'),str) and isinstance(link.get('sourceId'),str):

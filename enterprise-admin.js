@@ -1,7 +1,7 @@
 /* Administration screens backed exclusively by authenticated server endpoints. */
 (()=>{'use strict';
 const E=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const labels={view:'查看',create:'新增',update:'修改',delete:'删除',import:'Excel导入',export:'Excel导出',label_print:'标签打印',report_print:'工单/报表打印',close_order:'关闭订单',reopen_order:'取消关闭',generate_work:'下推工单',generate_report:'下推生产报表',draft_edit:'维护工单草稿',confirm_work:'确定工单',scan_submit:'提交报工',scan_correct:'更正已提交报工',inventory_adjust:'库存调整'};
+const labels={view:'查看',create:'新增',update:'修改',delete:'删除',import:'Excel导入',export:'Excel导出',label_print:'标签打印',report_print:'工单/报表打印',close_order:'关闭',reopen_order:'取消关闭',generate_work:'下推工单',generate_report:'下推生产报表',draft_edit:'维护工单草稿',confirm_work:'确定工单',scan_submit:'提交报工',scan_correct:'更正已提交报工',inventory_adjust:'库存调整'};
 let currentTab='users',cache={},migration=null,selectedRole=null;
 const api=(path,options)=>JYEnterprise.api('/admin'+path,options),el=id=>document.getElementById(id);
 function error(message){if(el('adminError'))el('adminError').textContent=message}

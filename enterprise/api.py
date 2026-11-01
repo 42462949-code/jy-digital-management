@@ -17,6 +17,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse, Response
 from psycopg.types.json import Jsonb
 
+from .work_state import work_state
 from .db import (ACTIONS, BUSINESS_TABLES, CATALOG, PASSWORDS, TEAM_COLUMN, UTC7, Store,
                  audit, canonical, effective_permissions, in_scope, is_admin,
                  public_record, scopes, token_hash, validate_password)
@@ -155,6 +156,7 @@ def insert_record(con, user, table, values, information='', meta=None, team_id=N
     if table==2 and len(values)==17: values=values+['']
     if table==8 and len(values)==10: values=values+['','']
     if table==1 and len(values)==14: values=values+[(meta or {}).get('documentNo','')]
+    if table==1: meta={**(meta or {}),**work_state(values,(meta or {}).get('workStatus'))}
     record_id = uid(record_id) if record_id else str(uuid.uuid4())
     con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                 (record_id, table, Jsonb(values), normalize_information(information), Jsonb(meta or {}), user['id'], user['department'], team_id))
@@ -500,6 +502,7 @@ def create_app(config=None):
                     fail(400,'新增销售订单必须包含订单子表ID')
                 information = normalize_information(change.get('information', '')) if table in (0,1) else ''
                 meta = change.get('meta', {}) if table == 8 else old['meta'] if old else {}
+                if table == 1: meta={**meta,**work_state(values,meta.get('workStatus'))}
                 if table == 8:
                     if not isinstance(meta, dict) or set(meta)-{'unit','reviewStatus','submittedAt'} or meta.get('submittedAt') != (old['meta'].get('submittedAt') if old else None):
                         fail(403, '提交回执仅由后台维护')

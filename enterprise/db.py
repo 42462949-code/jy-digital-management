@@ -94,6 +94,11 @@ class Store:
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\",\"\"]'::jsonb WHERE table_id=8 AND jsonb_array_length(values_json)=10")
             con.execute("UPDATE jy_records SET values_json=values_json || jsonb_build_array(COALESCE(meta->>'documentNo','')) WHERE table_id=1 AND jsonb_array_length(values_json)=14")
             con.execute("UPDATE jy_records production SET values_json=jsonb_set(production.values_json,'{17}',to_jsonb(COALESCE(work.values_json->>14,''))) FROM jy_records work WHERE production.table_id=2 AND work.table_id=1 AND production.meta->>'sourceWorkId'=work.id::text AND COALESCE(production.values_json->>17,'')=''")
+            from .work_state import work_state
+            for work in con.execute('SELECT id,values_json,meta FROM jy_records WHERE table_id=1').fetchall():
+                updated={**work['meta'],**work_state(work['values_json'],work['meta'].get('workStatus'))}
+                if updated!=work['meta']:
+                    con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(updated),work['id']))
             if not con.execute('SELECT 1 FROM jy_roles LIMIT 1').fetchone():
                 for name, description, permissions, admin in role_templates():
                     con.execute('INSERT INTO jy_roles(id,name,description,permissions,system_admin) VALUES(%s,%s,%s,%s,%s)',
@@ -134,7 +139,7 @@ def role_templates():
     sales = grants([0], ['view', 'create', 'update', 'import', 'label_print', 'close_order', 'reopen_order'])
     yield '销售人员', '销售订单维护与标签打印', sales, False
     planner = grants([0], ['view', 'generate_work'])
-    planner.update(grants([1], ['view', 'draft_edit', 'confirm_work', 'report_print', 'label_print', 'generate_report']))
+    planner.update(grants([1], ['view', 'draft_edit', 'confirm_work', 'report_print', 'label_print', 'generate_report', 'close_order', 'reopen_order']))
     planner.update(grants([9], ['view', 'create', 'update', 'delete']))
     planner.update(grants([2, 7], ['view']))
     yield '生管计划员', '下达、打印及确认工单；维护班组', planner, False
