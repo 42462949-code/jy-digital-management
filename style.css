@@ -896,3 +896,8 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 .management-home-page #topActions{display:none}
 .management-home-page #content{background:#fff;min-height:55vh;padding:0;border-radius:8px}
 @media(max-width:700px){.management-home-heading{padding:12px 10px 8px}.management-home-heading h1{font-size:20px}}
+
+#modal.workorder-dialog .wo-document-title{min-height:72px;padding:0 190px}
+#modal.workorder-dialog .wo-document-number{position:absolute;right:0;bottom:3px;font:14px Arial,'Microsoft YaHei',sans-serif;white-space:nowrap;color:#000}
+#modal.workorder-dialog .wo-order-qr{display:block;width:20mm;max-width:100%;height:auto;aspect-ratio:1;margin:0 auto}
+#modal.workorder-dialog .wo-table .wo-qr-cell{padding:1mm;text-align:center}

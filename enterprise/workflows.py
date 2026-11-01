@@ -41,6 +41,27 @@ def register_workflows(app, store):
     def draft_scope(row):
         return {'owner_id': row['owner_id'], 'team_id': row['team_id'], 'department': ''}
 
+    def reserve_document_number(con):
+        day=dt.datetime.now(UTC7).strftime('%y%m%d');prefix='MO-'+day+'-'
+        floor=con.execute("SELECT COALESCE(max(substring(number from '[0-9]+$')::bigint),0) AS value FROM (SELECT COALESCE(NULLIF(meta->>'documentNo',''),values_json->>14) AS number FROM jy_records WHERE table_id=1 UNION ALL SELECT payload->>'documentNo' FROM jy_drafts) docs WHERE number ~ %s",('^'+prefix+'[0-9]+$',)).fetchone()['value']
+        value=con.execute('INSERT INTO jy_document_sequences(day,last_value) VALUES(%s,%s) ON CONFLICT(day) DO UPDATE SET last_value=GREATEST(jy_document_sequences.last_value,%s)+1 RETURNING last_value',(day,floor+1,floor)).fetchone()['last_value']
+        return prefix+str(value).zfill(2)
+
+    def ensure_draft_number(con,row):
+        payload=copy.deepcopy(row['payload']);changed=False
+        if not payload.get('documentNo'):
+            payload['documentNo']=reserve_document_number(con);changed=True
+        if '工单号' not in payload['fields']:
+            payload['fields'].append('工单号');changed=True
+        for entries in [payload['rows'],payload['_originalRows']]:
+            for entry in entries:
+                if len(entry['values'])==15: entry['values'].append(payload['documentNo']);changed=True
+        if changed:
+            payload['revision']=payload.get('revision',0)+1
+            con.execute('UPDATE jy_drafts SET payload=%s,version=version+1,printed_version=NULL WHERE id=%s',(Jsonb(payload),row['id']))
+            row=con.execute('SELECT * FROM jy_drafts WHERE id=%s',(row['id'],)).fetchone()
+        return row
+
     def draft_public(row):
         payload = {k: v for k, v in row['payload'].items() if not k.startswith('_')}
         payload['printedRevision'] = payload.get('revision',0) if row['printed_version']==row['version'] else -1
@@ -147,11 +168,11 @@ def register_workflows(app, store):
 
     @app.get('/api/work-drafts')
     def drafts(request: Request):
-        with store.connect() as con:
+        with store.connect(write=True) as con:
             user, _ = current_user(request, con)
             require(con, user, 1, 'view')
             rows = con.execute('SELECT * FROM jy_drafts WHERE owner_id=%s AND completed_at IS NULL ORDER BY updated_at DESC', (user['id'],)).fetchall()
-            return {'drafts': [draft_public(row) for row in rows if in_scope(user, draft_scope(row), scopes(con,user,1,'draft_edit'))]}
+            return {'drafts': [draft_public(ensure_draft_number(con,row)) for row in rows if in_scope(user, draft_scope(row), scopes(con,user,1,'draft_edit'))]}
 
     @app.post('/api/work-drafts')
     async def create_draft(request: Request):
@@ -167,7 +188,7 @@ def register_workflows(app, store):
             existing = con.execute('SELECT * FROM jy_drafts WHERE owner_id=%s AND completed_at IS NULL LIMIT 1', (user['id'],)).fetchone()
             if existing:
                 require(con,user,1,'draft_edit',draft_scope(existing))
-                return {'draft': draft_public(existing), 'resumed': True}
+                return {'draft': draft_public(ensure_draft_number(con,existing)), 'resumed': True}
             scope_record = {'owner_id': user['id'], 'team_id': team_id, 'department': user['department']}
             require(con, user, 1, 'draft_edit', scope_record)
             created_at, rows = stamp(), []
@@ -180,9 +201,11 @@ def register_workflows(app, store):
                 if remaining<=0: fail(409,'订单累计已下达数量已达到订单数量：'+sid)
                 values = ['',created_at,team['values_json'][2],v[4],v[5],v[8],v[10],v[7],v[9],quantity_text(format(remaining,'f')),0,v[13],v[17],sid,kind]
                 rows.append({'key': str(uuid.uuid4()), 'sourceRecordId': str(sale['id']), 'sourceSalesId': sid, 'values': values})
+            document_no=reserve_document_number(con)
+            for entry in rows: entry['values'].append(document_no)
             fields = ['信息录入'] + CATALOG['1']['fields']
-            payload = {'version':1,'layoutVersion':3,'fields':fields,'type':kind,'group':team['values_json'][2],
-                       'createdAt':created_at,'preparer':user['name'],'revision':0,'printedRevision':-1,
+            payload = {'version':1,'layoutVersion':4,'fields':fields,'type':kind,'group':team['values_json'][2],
+                       'createdAt':created_at,'documentNo':document_no,'preparer':user['name'],'revision':0,'printedRevision':-1,
                        'rows':rows,'columns':[], '_originalRows':copy.deepcopy(rows)}
             draft_id = str(uuid.uuid4())
             con.execute('INSERT INTO jy_drafts(id,owner_id,team_id,payload) VALUES(%s,%s,%s,%s)', (draft_id,user['id'],team_id,Jsonb(payload)))
@@ -198,6 +221,7 @@ def register_workflows(app, store):
             if data.get('version') != old['version']: fail(409, '草稿已被修改，请重新打开')
             proposed = data.get('draft', {})
             if not isinstance(proposed, dict) or not isinstance(proposed.get('rows'),list): fail(400, '草稿格式无效')
+            if proposed.get('documentNo',old['payload'].get('documentNo'))!=old['payload'].get('documentNo'): fail(403,'工单号由后台生成，不能修改')
             originals = {r['key']: r for r in old['payload']['_originalRows']}
             seen, rows = set(), []
             for row in proposed['rows']:
@@ -205,11 +229,11 @@ def register_workflows(app, store):
                 if not original or key in seen: fail(400, '草稿包含未选择的订单或重复行')
                 seen.add(key)
                 values = row.get('values')
-                if not isinstance(values,list) or len(values)!=15: fail(400, '草稿字段无效')
+                if not isinstance(values,list) or len(values)!=16: fail(400, '草稿字段无效')
                 validated = validate_values(1, values[1:])
                 values = [normalize_information(values[0])] + validated
                 editable = {3,4,5,6,7,8,9,12}
-                if any(str(values[i])!=str(original['values'][i]) for i in range(15) if i not in editable and i!=0):
+                if any(str(values[i])!=str(original['values'][i]) for i in range(16) if i not in editable and i!=0):
                     fail(403, '工单ID、日期、设备和系统字段不可直接修改')
                 rows.append({**original, 'values':values})
             payload = copy.deepcopy(old['payload'])
@@ -218,12 +242,13 @@ def register_workflows(app, store):
             columns = proposed.get('columns', [])
             if not isinstance(columns,list) or len(columns)>15: fail(400, '列设置无效')
             for c in columns:
-                if not isinstance(c,dict) or c.get('n') not in payload['fields'] or type(c.get('w')) not in (float,int) or not 20<=c['w']<=3000:
+                if not isinstance(c,dict) or c.get('n') not in payload['fields']+['二维码'] or type(c.get('w')) not in (float,int) or not 20<=c['w']<=3000:
                     fail(400,'列宽无效')
             payload['columns'] = columns
+            payload['layoutVersion'] = proposed.get('layoutVersion',payload.get('layoutVersion',3))
             # UI revision markers do not invalidate an otherwise identical server document.
             payload['revision'] = proposed.get('revision',payload.get('revision',0))
-            changed = any(canonical(payload.get(k)) != canonical(old['payload'].get(k)) for k in ['rows','preparer','columns'])
+            changed = any(canonical(payload.get(k)) != canonical(old['payload'].get(k)) for k in ['rows','preparer','columns','layoutVersion'])
             if changed:
                 con.execute('UPDATE jy_drafts SET payload=%s,version=version+1,printed_version=NULL,updated_at=now() WHERE id=%s',(Jsonb(payload),old['id']))
                 audit(con,user,'work.draft.update',1,str(old['id']),before={'rows':old['payload']['rows']},after={'rows':rows})
@@ -268,7 +293,7 @@ def register_workflows(app, store):
                 remaining=remaining_quantity(con,sale['values_json'])
                 if Decimal(str(values[8]).replace(',','').replace('，','').strip())>remaining: fail(409,'本次工单数量超过剩余可下达数量，请重新生成或调整')
                 log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
-                work=insert_record(con,user,1,values,entry['values'][0],meta={'printHistory':{'sourceId':sid,'entry':log}},team_id=row['team_id'],action='work.confirm')
+                work=insert_record(con,user,1,values,entry['values'][0],meta={'printHistory':{'sourceId':sid,'entry':log},'documentNo':row['payload']['documentNo']},team_id=row['team_id'],action='work.confirm')
                 work_ids.append(str(work['id']))
                 v=sale['values_json'].copy(); previous=str(v[26] or '').strip()
                 log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
@@ -485,8 +510,9 @@ def register_workflows(app, store):
                         link=links.get(prior.get('key')) if isinstance(links,dict) and prior.get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else None
                         if isinstance(link,dict) and isinstance(link.get('entry'),str) and isinstance(link.get('sourceId'),str):
                             metadata['printHistory']={'sourceId':link['sourceId'],'entry':link['entry']}
+                            if isinstance(link.get('documentNo'),str): metadata['documentNo']=link['documentNo']
                     team=teams.get(str(values[{1:1,2:4,8:3}[table]]).strip()) if table in [1,2,8] else None
-                    insert_record(con,user,table,values,info.get((data.get('workRowIdentities',[])[index].get('key') if table==1 and index<len(data.get('workRowIdentities',[])) and data['workRowIdentities'][index].get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else identity),''),metadata,team,action='migration.record')
+                    insert_record(con,user,table,validate_values(table,values),info.get((data.get('workRowIdentities',[])[index].get('key') if table==1 and index<len(data.get('workRowIdentities',[])) and data['workRowIdentities'][index].get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else identity),''),metadata,team,action='migration.record')
             migration_id=str(uuid.uuid4())
             con.execute('INSERT INTO jy_migrations(id,actor_id,source_label,digest,counts) VALUES(%s,%s,%s,%s,%s)',
                         (migration_id,user['id'],text(data.get('sourceLabel','主数据'),'来源',200),result['digest'],Jsonb(result['counts'])))

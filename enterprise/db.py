@@ -23,6 +23,7 @@ TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
 UTC7 = dt.timezone(dt.timedelta(hours=7))
 
 SCHEMA = '''
+CREATE TABLE IF NOT EXISTS jy_document_sequences (day text PRIMARY KEY, last_value bigint NOT NULL CHECK (last_value>0));
 CREATE TABLE IF NOT EXISTS jy_roles (
  id uuid PRIMARY KEY, name text UNIQUE NOT NULL, description text NOT NULL DEFAULT '',
  permissions jsonb NOT NULL DEFAULT '{}', system_admin boolean NOT NULL DEFAULT false,
@@ -89,6 +90,7 @@ class Store:
     def initialize(self):
         with self.connect(write=True) as con:
             con.execute(SCHEMA)
+            con.execute("UPDATE jy_records SET values_json=values_json || jsonb_build_array(COALESCE(meta->>'documentNo','')) WHERE table_id=1 AND jsonb_array_length(values_json)=14")
             if not con.execute('SELECT 1 FROM jy_roles LIMIT 1').fetchone():
                 for name, description, permissions, admin in role_templates():
                     con.execute('INSERT INTO jy_roles(id,name,description,permissions,system_admin) VALUES(%s,%s,%s,%s,%s)',

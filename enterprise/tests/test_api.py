@@ -329,3 +329,50 @@ def test_legacy_work_history_matches_date_type_quantity_and_preserves_other_line
     duplicate='贴合2026/11/1：202\n贴合2026/11/1：202'
     assert remove_history_line(duplicate,values)=='贴合2026/11/1：202'
     assert remove_history_line('备注',values)=='备注'
+
+
+def test_document_number_persists_in_work_column_and_cannot_be_changed(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','生产','NUMBER#','','',''])
+    sale=create(admin,0,sale_values('NUMBER-SALE'))
+    payload={'ids':[sale['id']],'type':'贴合','teamId':team['id']}
+    first=admin.post('/api/work-drafts',json=payload).json()['draft']
+    import re
+    assert re.fullmatch(r'MO-\d{6}-\d{2,}',first['documentNo'])
+    assert first['fields'][-1]=='工单号' and first['rows'][0]['values'][15]==first['documentNo']
+    assert admin.post('/api/work-drafts',json=payload).json()['draft']['documentNo']==first['documentNo']
+    tampered={**first,'documentNo':'MO-000000-99'}
+    assert admin.post('/api/work-drafts/'+first['serverId']+'/save',json={'version':first['serverVersion'],'draft':tampered}).status_code==403
+    first['columns']=[{'n':'二维码','w':150}]
+    first=admin.post('/api/work-drafts/'+first['serverId']+'/save',json={'version':first['serverVersion'],'draft':first}).json()['draft']
+    assert admin.post('/api/work-drafts/'+first['serverId']+'/print',json={'version':first['serverVersion']}).status_code==200
+    response=admin.post('/api/work-drafts/'+first['serverId']+'/confirm',json={'version':first['serverVersion']})
+    assert response.status_code==200,response.text
+    work=admin.get('/api/tables/1').json()['records'][0]
+    assert len(work['values'])==15 and work['values'][14]==first['documentNo']
+    changed=work['values'].copy();changed[14]='MO-000000-99'
+    assert admin.post('/api/sync',json={'changes':[{'id':work['id'],'table':1,'version':work['version'],'values':changed}]}).status_code==403
+    # Delete the work then create again: number allocation is never rolled back by business deletion.
+    assert admin.post('/api/sync',json={'changes':[{'id':work['id'],'table':1,'version':work['version'],'delete':True}]}).status_code==200
+    second=admin.post('/api/work-drafts',json=payload).json()['draft']
+    assert int(second['documentNo'].split('-')[-1])==int(first['documentNo'].split('-')[-1])+1
+    assert admin.post('/api/work-drafts/'+second['serverId']+'/discard',json={}).status_code==200
+    third=admin.post('/api/work-drafts',json=payload).json()['draft']
+    assert int(third['documentNo'].split('-')[-1])==int(second['documentNo'].split('-')[-1])+1
+
+
+def test_legacy_draft_gets_one_number_and_requires_print_again(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','生产','OLD#','','','']);sale=create(admin,0,sale_values('OLD-NUMBER'))
+    draft=admin.post('/api/work-drafts',json={'ids':[sale['id']],'type':'贴合','teamId':team['id']}).json()['draft']
+    from psycopg.types.json import Jsonb
+    with store.connect(write=True) as con:
+        row=con.execute('SELECT * FROM jy_drafts WHERE id=%s',(draft['serverId'],)).fetchone();old=row['payload']
+        old.pop('documentNo');old['fields'].pop()
+        for entries in [old['rows'],old['_originalRows']]:
+            for entry in entries:entry['values'].pop()
+        con.execute('UPDATE jy_drafts SET payload=%s,printed_version=version WHERE id=%s',(Jsonb(old),row['id']))
+    upgraded=admin.get('/api/work-drafts').json()['drafts'][0]
+    assert upgraded['documentNo'] and upgraded['rows'][0]['values'][15]==upgraded['documentNo']
+    assert upgraded['printedRevision']==-1
+    assert admin.get('/api/work-drafts').json()['drafts'][0]['documentNo']==upgraded['documentNo']

@@ -125,6 +125,7 @@ def visible_rows(con, user, table, action='view'):
 
 
 def validate_values(table, values):
+    if table==1 and isinstance(values,list) and len(values)==14: values=values+['']
     if table not in BUSINESS_TABLES or not isinstance(values, list) or len(values) != len(CATALOG[str(table)]['fields']):
         fail(400, '表或字段数量不匹配')
     for value in values:
@@ -149,6 +150,7 @@ def resolve_team(con, user, table, values, action, prior=None):
 
 
 def insert_record(con, user, table, values, information='', meta=None, team_id=None, action='record.create', record_id=None):
+    if table==1 and len(values)==14: values=values+[(meta or {}).get('documentNo','')]
     record_id = uid(record_id) if record_id else str(uuid.uuid4())
     con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                 (record_id, table, Jsonb(values), normalize_information(information), Jsonb(meta or {}), user['id'], user['department'], team_id))
@@ -502,7 +504,7 @@ def create_app(config=None):
                     meta={**(old['meta'] if old else {}),**meta}
                     if number(values[8]) < 0: fail(400, '扫码数量不能为负数')
                 if old:
-                    locked = {0:[0,21,26], 1:[0,1,10,12,13], 2:[12], 5:[2], 6:[0]}.get(table, [])
+                    locked = {0:[0,21,26], 1:[0,1,10,12,13,14], 2:[12], 5:[2], 6:[0]}.get(table, [])
                     if any(str(values[i]) != str(old['values_json'][i]) for i in locked):
                         fail(403, '系统字段必须通过相应业务动作维护')
                 elif table == 0 and str(values[26]).strip():
