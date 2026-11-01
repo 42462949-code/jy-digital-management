@@ -380,15 +380,28 @@ def register_workflows(app, store):
         with store.connect(write=True) as con:
             user,_=current_user(request,con); ids=data.get('ids',[])
             if not isinstance(ids,list) or not 1<=len(ids)<=200: fail(400,'每次提交1至200条扫码记录')
+            if any(not isinstance(value,str) for value in ids) or (data.get('versions') is not None and not isinstance(data['versions'],dict)): fail(400,'扫码记录参数无效')
             accepted=[]; now=dt.datetime.now(dt.timezone.utc).isoformat()
-            for record_id in set(ids):
-                row=record_by_id(con,record_id,8); require(con,user,8,'scan_submit',row)
-                if not row['values_json'][2] or not row['values_json'][3]: fail(400,'请先填写工序和班组')
-                if number(row['values_json'][8])<0: fail(400,'数量无效')
-                meta={**row['meta'],'submittedAt':row['meta'].get('submittedAt') or now,'reviewStatus':'已确认'}
-                if not row['meta'].get('submittedAt'):
-                    con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(meta),row['id']))
-                    audit(con,user,'scan.submit',8,str(row['id']),after={'submittedAt':now})
+            for record_id in sorted(set(ids)):
+                row=con.execute('SELECT * FROM jy_records WHERE id=%s AND table_id=8 FOR UPDATE',(uid(record_id),)).fetchone()
+                if not row: fail(404,'记录不存在或不可访问')
+                require(con,user,8,'scan_submit',row)
+                if row['meta'].get('productionReportId'):
+                    accepted.append(str(row['id'])); continue
+                if data.get('versions') is not None and data['versions'].get(str(row['id']))!=row['version']:
+                    fail(409,'扫码记录已变化，请重新载入后确认')
+                v=row['values_json']
+                if not str(v[2]).strip() or not str(v[3]).strip(): fail(400,'请先填写工序和班组')
+                try:
+                    quantity=Decimal(str(v[8]).replace(',','').replace('，','').strip())
+                    if not quantity.is_finite() or quantity<0: raise InvalidOperation()
+                except (InvalidOperation,ValueError): fail(400,'数量无效')
+                values=[v[1],v[4],v[6],'',v[3],v[8],row['meta'].get('unit',''),'','','','',v[9],v[11],v[0],'','',v[2],v[10]]
+                report=insert_record(con,user,2,values,meta={'sourceScanId':str(row['id'])},team_id=row['team_id'],action='scan.generate_report')
+                con.execute('UPDATE jy_records SET owner_id=%s,department=%s WHERE id=%s',(row['owner_id'],row['department'],report['id']))
+                meta={**row['meta'],'submittedAt':row['meta'].get('submittedAt') or now,'reviewStatus':'已确认','productionReportId':str(report['id'])}
+                con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(meta),row['id']))
+                audit(con,user,'scan.submit',8,str(row['id']),after={'submittedAt':meta['submittedAt'],'productionReportId':str(report['id'])})
                 accepted.append(str(row['id']))
             return {'acceptedIds':accepted,'submittedAt':now}
 

@@ -495,3 +495,40 @@ def test_work_manual_close_reopen_is_scoped_atomic_and_idempotent(setup):
         assert closer.post('/api/sync',json={'changes':[{'id':a['id'],'table':1,'version':actual[a['id']]['version'],'values':a['values']}]}).status_code==403
     entries=admin.get('/api/admin/audit?action=work.close').json()['entries']
     assert len(entries)==1
+
+
+def test_scan_confirm_creates_production_exactly_once_and_checks_scope_atomically(setup):
+    app,admin,store=setup
+    team_a=create(admin,9,['1','生产','TRANSFER-A','','',''])
+    create(admin,9,['2','生产','TRANSFER-B','','',''])
+    values=['2026-11-01 10:20:30','2026-11-01','贴合','TRANSFER-A','客户','PO','产品','58','12.5','备注','MO-261101-01','TRANSFER-SALE']
+    first=create(admin,8,values,meta={'unit':'Y','submittedAt':None})
+    second=create(admin,8,values,meta={'unit':'Y','submittedAt':None})
+    hidden=values.copy();hidden[3]='TRANSFER-B';other=create(admin,8,hidden)
+    invalid=values.copy();invalid[2]=' ';bad=create(admin,8,invalid)
+    assert admin.post('/api/scan/submit',json={'ids':[first['id']],'versions':{first['id']:999}}).status_code==409
+    assert admin.post('/api/scan/submit',json={'ids':[first['id'],bad['id']]}).status_code==400
+    assert admin.get('/api/tables/2').json()['records']==[]
+    role=admin.post('/api/admin/roles',json={'name':'仅确认扫码','permissions':{'8':{'scope':'teams','actions':['view','scan_submit']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id');user(admin,'scan-transfer',[role_id],[team_a['id']])
+    with TestClient(app) as scanner:
+        login(scanner,'scan-transfer',change=True)
+        assert scanner.post('/api/scan/submit',json={'ids':[first['id'],other['id']]}).status_code==403
+        assert admin.get('/api/tables/2').json()['records']==[]
+        payload={'ids':[first['id']],'versions':{first['id']:first['version']}}
+        result=scanner.post('/api/scan/submit',json=payload)
+        assert result.status_code==200,result.text
+        assert result.json()['acceptedIds']==[first['id']]
+        assert scanner.post('/api/scan/submit',json=payload).status_code==200
+        reports=admin.get('/api/tables/2').json()['records'];assert len(reports)==1
+        report=reports[0]
+        assert report['values']==['2026-11-01','客户','产品','','TRANSFER-A','12.5','Y','','','','','备注','TRANSFER-SALE','2026-11-01 10:20:30','','','贴合','MO-261101-01']
+        assert report['meta']['sourceScanId']==first['id']
+        scans={r['id']:r for r in admin.get('/api/tables/8').json()['records']}
+        assert scans[first['id']]['meta']['productionReportId']==report['id']
+        assert not scans[second['id']]['meta'].get('submittedAt')
+        assert scanner.post('/api/sync',json={'changes':[{'id':first['id'],'table':8,'version':2,'delete':True}]}).status_code==403
+        stored=next(r for r in admin.get('/api/admin/roles').json()['roles'] if r['id']==role_id)
+        admin.post('/api/admin/roles',json={'id':role_id,'version':stored['version'],'name':stored['name'],'permissions':{'8':{'scope':'teams','actions':['view']}}})
+        assert scanner.post('/api/scan/submit',json=payload).status_code==403
+    assert len(admin.get('/api/admin/audit?action=scan.generate_report').json()['entries'])==1
