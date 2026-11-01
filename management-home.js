@@ -9,13 +9,10 @@
  function render(){return `<section class="management-home-overview" aria-labelledby="management-guide-title">
   <div class="management-guide-intro">
    <div class="management-guide-intro-copy">
-    <p class="management-guide-eyebrow"><span></span>内部数据化管理 · 使用指南</p>
     <h2 id="management-guide-title"><span>我们要在系统中做什么？</span><span>系统最后给我们<strong>输出什么？</strong></span></h2>
-    <div class="management-guide-intro-tags" aria-hidden="true"><span>业务录入</span><i>→</i><span>流程管理</span><i>→</i><span>数据输出</span></div>
    </div>
    <div class="management-guide-visual" aria-hidden="true"><div class="management-guide-orbit orbit-one"></div><div class="management-guide-orbit orbit-two"></div><div class="management-guide-visual-core">${icon('output')}</div>${modules.map(([kind,n])=>`<div class="management-guide-visual-node visual-${kind}">${icon(kind)}</div>`).join('')}<div class="management-guide-visual-line"></div></div>
   </div>
-  <div class="management-guide-index" aria-label="首页内容索引">${modules.map(([kind,n,label])=>`<a class="management-guide-index-item module-${kind}" href="#management-module-${kind}"><span class="management-guide-index-number">${n}</span><span>${label}</span>${icon(kind)}</a>`).join('')}</div>
   <div class="management-guide-grid">
    <article id="management-module-sales" class="management-guide-card module-sales" aria-labelledby="management-sales-title">
     ${heading('sales','01','销售订单管理','management-sales-title')}
@@ -63,5 +60,7 @@
    </article>
   </div>
  </section>`}
- window.JYManagementHome={render};
+ function fit(){const root=document.querySelector('.management-home-overview');if(!root)return;root.style.zoom='';root.style.width='';root.style.maxWidth='';if(innerWidth<1000||document.documentElement.classList.contains('phone-device'))return;const available=innerHeight-root.getBoundingClientRect().top-2,natural=root.getBoundingClientRect().height;if(available<=0||natural<=available)return;let scale=available/natural;const apply=()=>{root.style.zoom=String(scale);root.style.width='100%';root.style.maxWidth='none'};apply();const actual=root.getBoundingClientRect().height;if(actual>available){scale*=available/actual;apply()}}
+ window.addEventListener('resize',()=>requestAnimationFrame(fit));
+ window.JYManagementHome={render,fit};
 })();

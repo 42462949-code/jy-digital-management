@@ -916,3 +916,22 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 /* Login fields have no background fill in any interaction state. */
 #modal .login-card .login-field,#modal .login-card .login-field:is(:hover,:focus-within),#modal .login-card .login-field input,#modal .login-card .login-field input:is(:hover,:focus,:active),#backendUsername,#backendPassword{background-color:transparent!important;background-image:none!important;box-shadow:none!important}
 #modal .login-card .login-field input:is(:autofill,:-webkit-autofill),#backendUsername:is(:autofill,:-webkit-autofill),#backendPassword:is(:autofill,:-webkit-autofill){background-color:transparent!important;background-image:none!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-box-shadow:none!important;box-shadow:none!important;-webkit-text-fill-color:#234466!important;caret-color:#234466;transition:background-color 999999s ease-out 0s}
+
+/* System introduction brand header; business pages retain their navigation. */
+.management-home-page{position:relative}
+.management-home-page .management-home-heading{height:72px;min-height:0;padding:8px 160px;display:flex;justify-content:center;align-items:center;background:#fff}
+.management-intro-brand{display:flex;justify-content:center;align-items:center;gap:18px;min-width:0}
+.management-intro-brand>img{width:100px;height:40px;object-fit:contain;flex:0 0 auto}
+.management-home-page .management-home-heading h1{display:flex;justify-content:center;align-items:center;gap:9px;margin:0;font-size:clamp(16px,1.3vw,22px);line-height:1.4;white-space:nowrap;color:#194777}
+.management-intro-titles{text-align:center;min-width:0}
+.management-intro-titles>p{margin:3px 0 0;font-size:13px;line-height:1.3;color:#577691;letter-spacing:3px}
+.management-intro-divider{font-weight:400;color:#8ca6be}
+.management-home-page .topbar{position:absolute;top:19px;right:16px;width:auto;min-height:0!important;height:34px;padding:0!important;background:transparent;border:0;gap:0;z-index:60;overflow:visible}
+.management-home-page #topTabs,.management-home-page .workspace-controls{display:none}
+.home-landing-actions{display:none}
+.management-home-page .home-landing-actions{display:flex;align-items:center;gap:8px}
+.management-home-page .home-landing-actions button{border:0!important;padding:2px!important;background:transparent!important;color:#245f9f;font:inherit;font-size:13px;line-height:24px;min-width:0;width:auto;white-space:nowrap;cursor:pointer;box-shadow:none!important}
+.management-home-page .home-landing-actions button:hover,.management-home-page .home-landing-actions button:focus-visible{color:#164987;text-decoration:underline;outline-offset:2px}
+.home-landing-actions>span{color:#9baebf}
+@media(max-width:1100px) and (min-width:701px){.management-home-page .management-home-heading{padding-left:130px;padding-right:130px}.management-intro-brand{gap:10px}.management-intro-brand>img{width:78px;height:34px}.management-home-page .management-home-heading h1{gap:5px;font-size:15px}.management-home-page .topbar{right:10px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:12px}}
+@media(max-width:700px){.management-home-page .management-home-heading{height:104px;padding:8px 10px 29px}.management-intro-brand{gap:10px}.management-intro-brand>img{width:70px;height:36px}.management-home-page .management-home-heading h1{display:block;font-size:14px;line-height:1.4;white-space:normal}.management-home-page .management-home-heading h1>span{display:block}.management-home-page .management-home-heading h1 .management-intro-divider{display:none}.management-intro-titles>p{margin-top:2px;font-size:11px}.management-home-page .topbar{top:76px;bottom:auto;right:10px;transform:none;height:24px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:11px;line-height:20px}}

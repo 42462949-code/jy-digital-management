@@ -6,7 +6,7 @@
 .management-home-overview .module-attendance{--module:#db771d;--module-deep:#b45b10;--module-light:#fff5e8;--module-border:#f8dbb8}
 .management-home-overview .module-stock{--module:#178467;--module-deep:#10674f;--module-light:#eaf8f2;--module-border:#bce7d6}
 .management-home-overview .module-output{--module:#087f99;--module-deep:#06687f;--module-light:#e8f7fb;--module-border:#b8e5ee}
-.management-home-overview .management-guide-intro{display:grid;position:relative;grid-template-columns:minmax(0,1fr) 310px;align-items:center;gap:24px;width:auto;height:auto;min-height:260px;overflow:hidden;margin:0;padding:32px 44px;border:0;border-radius:20px;background:radial-gradient(ellipse at 85% 90%,#5d3eab88,transparent 48%),linear-gradient(112deg,#132b63 0%,#20366c 48%,#392d72 100%);box-shadow:0 12px 30px #23366719}
+.management-home-overview .management-guide-intro{display:grid;position:relative;grid-template-columns:minmax(0,1fr) 310px;align-items:center;gap:24px;width:auto;height:auto;min-height:260px;overflow:hidden;margin:0 0 20px;padding:32px 44px;border:0;border-radius:20px;background:radial-gradient(ellipse at 85% 90%,#5d3eab88,transparent 48%),linear-gradient(112deg,#132b63 0%,#20366c 48%,#392d72 100%);box-shadow:0 12px 30px #23366719}
 .management-home-overview .management-guide-intro:before{content:'';position:absolute;inset:0;background-image:linear-gradient(#ffffff05 1px,transparent 1px),linear-gradient(90deg,#ffffff05 1px,transparent 1px);background-size:36px 36px;pointer-events:none}
 .management-home-overview .management-guide-intro-copy{position:relative;z-index:1;min-width:0}
 .management-home-overview .management-guide-eyebrow{display:flex;align-items:center;gap:9px;margin:0 0 14px;color:#c0d1f2;font-size:12px;font-weight:600;line-height:1.6;letter-spacing:2px}
@@ -65,3 +65,56 @@
 @media(max-width:700px){.management-home-overview{padding:15px 12px 26px}.management-home-overview .management-guide-intro{padding:26px 21px 25px;border-radius:13px}.management-home-overview .management-guide-eyebrow{font-size:10px;letter-spacing:1.4px;margin-bottom:14px}.management-home-overview h2{font-size:25px;line-height:1.65;letter-spacing:0}.management-home-overview .management-guide-intro-tags{gap:9px;margin-top:19px;font-size:10px;letter-spacing:0}.management-home-overview .management-guide-intro-tags>span{padding:5px 9px}.management-home-overview .management-guide-index{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:18px}.management-home-overview .management-guide-index-item{padding:11px 12px;font-size:12px;gap:8px;border-radius:8px}.management-home-overview .management-guide-index-item:last-child{grid-column:1/-1}.management-home-overview .management-guide-index-item>.management-guide-icon{display:block;width:18px;height:18px}.management-home-overview .management-guide-grid{grid-template-columns:1fr;gap:17px}.management-home-overview .management-guide-card{padding:0 18px 23px;border-radius:12px;scroll-margin-top:80px}.management-home-overview .management-guide-card-heading{margin:0 -18px 20px;padding:17px 18px;min-height:80px;gap:12px}.management-home-overview h3{font-size:19px}.management-home-overview h4{font-size:15px}.management-home-overview p,.management-home-overview .management-guide-reports li{font-size:14px;line-height:1.9}.management-home-overview .management-guide-steps{gap:18px}.management-home-overview .management-guide-steps>li{padding-left:31px}.management-home-overview .management-guide-steps>li:before{width:21px;height:21px;border-radius:6px}.management-home-overview .management-guide-reminder{padding:15px 16px}.management-home-overview .management-guide-reminder p{font-size:14px}.management-home-overview .management-guide-reports li{padding-left:32px}.management-home-overview .management-guide-reports li:before{left:13px}.management-home-overview .management-guide-attendance .management-guide-card-heading{padding-top:17px;padding-bottom:17px;margin-bottom:20px}}
 @media(prefers-reduced-motion:reduce){.management-home-overview .management-guide-index-item{transition:none}.management-home-overview .management-guide-index-item:hover{transform:none}}
 @media print{.management-home-overview{max-width:none;padding:0;background:#fff}.management-home-overview .management-guide-intro{box-shadow:none;break-after:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}.management-home-overview .management-guide-index{display:none}.management-home-overview .management-guide-card{box-shadow:none;break-inside:avoid}.management-home-overview .management-guide-card-heading{print-color-adjust:exact;-webkit-print-color-adjust:exact}.management-home-overview .management-guide-grid{gap:16px}}
+
+/* Desktop overview: keep every explanation visible in two compact rows. */
+@media screen and (min-width:1000px){
+.management-home-overview{--guide-desktop-font:clamp(12px,.98vw,15px);max-width:none;padding:12px 16px 15px}
+.management-home-overview .management-guide-intro{display:block;min-height:0;margin:0 0 12px;padding:16px 21px;border-radius:10px;box-shadow:0 5px 15px #23366712}
+.management-home-overview .management-guide-intro-copy{display:block}
+.management-home-overview h2{display:flex;flex-wrap:wrap;align-items:center;gap:0 16px;font-size:clamp(22px,1.7vw,31px);line-height:1.45;letter-spacing:0}
+.management-home-overview h2>span{display:block}
+.management-home-overview .management-guide-visual{display:none}
+.management-home-overview .management-guide-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:11px;align-items:stretch}
+.management-home-overview .management-guide-card{grid-column:span 3;padding:0 13px 12px;border-radius:9px;box-shadow:0 3px 10px #1d355308}
+.management-home-overview .management-guide-attendance,.management-home-overview .module-stock,.management-home-overview .module-output{grid-column:span 2}
+.management-home-overview .management-guide-card-heading,.management-home-overview .management-guide-attendance .management-guide-card-heading{min-height:38px;margin:0 -13px 10px;padding:7px 13px;gap:9px}
+.management-home-overview .management-guide-card-heading:after{top:-90px;width:150px;height:150px;border-width:19px}
+.management-home-overview .management-guide-heading-icon{flex-basis:25px;width:25px;height:25px;border-radius:6px}
+.management-home-overview .management-guide-heading-icon>.management-guide-icon{width:17px;height:17px}
+.management-home-overview h3{font-size:clamp(14px,1.2vw,19px);line-height:1.35;letter-spacing:.2px}
+.management-home-overview .management-guide-number{font-size:24px;line-height:1}
+.management-home-overview .management-guide-steps{display:grid;gap:7px}
+.management-home-overview .management-guide-steps>li{padding-left:25px;font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-steps>li:before{top:1px;width:18px;height:18px;border-radius:5px;font-size:10px}
+.management-home-overview .management-guide-steps h4,.management-home-overview .management-guide-steps p{display:inline;margin:0;font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-steps h4:after{content:'：'}
+.management-home-overview p{font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-attendance-content{display:block}
+.management-home-overview .management-guide-attendance-content>div:first-child{font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-attendance-content>div:first-child h4,.management-home-overview .management-guide-attendance-content>div:first-child p{display:inline;margin:0;font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-attendance-content>div:first-child h4:after{content:'：'}
+.management-home-overview .management-guide-reminder{display:block;margin-top:9px;padding:8px 10px;border-radius:6px}
+.management-home-overview .management-guide-reminder>span{display:inline-block;margin-right:5px;padding:2px 5px;font-size:10px;line-height:1.4;letter-spacing:.3px;vertical-align:1px}
+.management-home-overview .management-guide-reminder p{display:inline;font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-output-intro{margin:0 0 7px;font-size:var(--guide-desktop-font);line-height:1.55}
+.management-home-overview .management-guide-reports{gap:5px}
+.management-home-overview .management-guide-reports li{display:block;min-height:0;padding:5px 8px 5px 23px;border-radius:5px;font-size:var(--guide-desktop-font);line-height:1.45}
+.management-home-overview .management-guide-reports li:before{left:9px;top:11px;width:5px;height:5px;box-shadow:0 0 0 3px #119ab410}
+}
+
+/* Wide phone screens use readable columns, without desktop fit scaling. */
+@media screen and (min-width:701px){
+html.phone-device .management-home-overview{padding:14px;max-width:none}
+html.phone-device .management-home-overview .management-guide-intro{display:block;min-height:0;padding:18px 22px;margin-bottom:14px;border-radius:12px}
+html.phone-device .management-home-overview h2{display:flex;flex-wrap:wrap;gap:0 12px;font-size:24px;line-height:1.5}
+html.phone-device .management-home-overview .management-guide-visual{display:none}
+html.phone-device .management-home-overview .management-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+html.phone-device .management-home-overview .management-guide-card{grid-column:auto;padding:0 14px 16px}
+html.phone-device .management-home-overview .management-guide-attendance{grid-column:1/-1}
+html.phone-device .management-home-overview .management-guide-card-heading,html.phone-device .management-home-overview .management-guide-attendance .management-guide-card-heading{min-height:48px;margin:0 -14px 14px;padding:10px 14px}
+html.phone-device .management-home-overview h3{font-size:17px}
+html.phone-device .management-home-overview .management-guide-steps{gap:13px}
+html.phone-device .management-home-overview .management-guide-steps h4,html.phone-device .management-home-overview .management-guide-steps p,html.phone-device .management-home-overview .management-guide-attendance-content>div:first-child h4,html.phone-device .management-home-overview .management-guide-attendance-content>div:first-child p{display:block;font-size:14px;line-height:1.75}
+html.phone-device .management-home-overview .management-guide-steps h4:after,html.phone-device .management-home-overview .management-guide-attendance-content>div:first-child h4:after{content:none}
+html.phone-device .management-home-overview p,html.phone-device .management-home-overview .management-guide-reminder p,html.phone-device .management-home-overview .management-guide-reports li{font-size:14px;line-height:1.75}
+}
