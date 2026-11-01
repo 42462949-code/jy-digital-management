@@ -93,6 +93,8 @@ class Store:
     def initialize(self):
         with self.connect(write=True) as con:
             con.execute(SCHEMA)
+            con.execute("UPDATE jy_records SET values_json=values_json - 9,version=version+1 WHERE table_id=12 AND jsonb_array_length(values_json)=15")
+            con.execute("UPDATE jy_records SET values_json=values_json - 12,version=version+1 WHERE table_id=13 AND jsonb_array_length(values_json)=19")
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\"]'::jsonb WHERE table_id=2 AND jsonb_array_length(values_json)=17")
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\",\"\"]'::jsonb WHERE table_id=8 AND jsonb_array_length(values_json)=10")
             con.execute("UPDATE jy_records SET values_json=values_json || jsonb_build_array(COALESCE(meta->>'documentNo','')) WHERE table_id=1 AND jsonb_array_length(values_json)=14")

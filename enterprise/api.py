@@ -127,6 +127,7 @@ def visible_rows(con, user, table, action='view'):
 
 
 def validate_values(table, values):
+    if table in [12,13] and isinstance(values,list) and len(values)=={12:15,13:19}[table]:values=values[:{12:9,13:12}[table]]+values[{12:9,13:12}[table]+1:]
     if table==2 and isinstance(values,list) and len(values) in [17,18]: values=values+['']*(20-len(values))
     if table==4 and isinstance(values,list) and len(values)==10: values=values+['']*4
     if table==8 and isinstance(values,list) and len(values)==10: values=values+['','']

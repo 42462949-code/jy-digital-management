@@ -645,7 +645,11 @@ def test_only_excel_inventory_tables_are_available(setup):
     app,admin,store=setup
     new_stock=create(admin,12,['1','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10',''])
     new_ledger=create(admin,13,['2026-10-02','NEW-DOC','入库','贴合','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10','','2026-10-02 10:00:00'])
-    assert len(new_stock['values'])==15 and len(new_ledger['values'])==19
+    assert len(new_stock['values'])==14 and len(new_ledger['values'])==18
+    assert new_stock['values'][9:]==['0','10','0','10','']
+    assert new_ledger['values'][12:]==['0','10','0','10','','2026-10-02 10:00:00']
+    assert '库位' not in admin.get('/api/admin/roles').json()['catalog']['12']['fields']
+    assert '库位' not in admin.get('/api/admin/roles').json()['catalog']['13']['fields']
     catalog=admin.get('/api/admin/roles').json()['catalog']
     assert '5' not in catalog and '6' not in catalog
     assert catalog['12']['name']=='即时库存' and catalog['13']['name']=='出入库明细表'
@@ -742,3 +746,22 @@ def test_legacy_migration_skips_empty_attendance_and_resolves_team(setup):
     assert response.status_code==200,response.text
     row=admin.get('/api/tables/4').json()['records'][0]
     assert row['teamId'] and row['values'][11]=='贴合' and row['values'][6]=='13'
+
+
+def test_inventory_location_removal_preserves_balances_and_is_idempotent(setup):
+    from psycopg.types.json import Jsonb
+    _,admin,store=setup
+    stock=['1','','CODE','品名','规格','58','白','Y','仓库','库位A','11','22','33','44','库存备注']
+    ledger=['2026-11-01','DOC','入库','贴合','SO','CODE','品名','规格','58','白','Y','仓库','库位B','55','66','77','88','明细备注','2026-11-01 09:00:00']
+    a=create(admin,12,stock);b=create(admin,13,ledger)
+    with store.connect(write=True) as con:
+        for row,values in [(a,stock),(b,ledger)]:con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(values),row['id']))
+    store.initialize();store.initialize()
+    actual=admin.get('/api/tables/12').json()['records'][0]
+    detail=admin.get('/api/tables/13').json()['records'][0]
+    assert actual['values']==stock[:9]+stock[10:] and actual['version']==a['version']+1
+    assert detail['values']==ledger[:12]+ledger[13:] and detail['version']==b['version']+1
+    # Native new schemas are accepted; legacy uploads are also normalized above.
+    values=actual['values'].copy();values[9]='99'
+    updated=admin.post('/api/sync',json={'changes':[{'id':actual['id'],'table':12,'version':actual['version'],'values':values}]})
+    assert updated.status_code==200 and updated.json()['records'][0]['values'][9]=='99'

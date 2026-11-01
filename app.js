@@ -49,6 +49,9 @@ if(jyStorage.getItem('jy-temp-template-version')!==TEMP_TEMPLATE.version){
 function blankAttendanceRows(){return []}
 if(jyStorage.getItem('jy-attendance-template-version')!==ATTENDANCE_TEMPLATE.version){const old=Array.isArray(db[4])?db[4]:[];jyStorage.setItem('jy-attendance-before-template',JSON.stringify({rows:old,columns:jyStorage.getItem('jy-cols-4')}));db[4]=old.filter(row=>[10,14].includes(row.length)&&row.slice(0,10).some(v=>String(v??'').trim())).map(row=>JYBusiness.attendanceValues(row.slice()));jyStorage.setItem('jy-attendance-template-version',ATTENDANCE_TEMPLATE.version);save()}
 JYBusiness.normalizeProduction();JYBusiness.restoreProduction();window.__productionReady=true;
+// Drop the removed location field from stored inventory rows without shifting balances.
+if(!window.JY_ENTERPRISE_MODE){let changed=false;for(const [table,length,column] of [[12,15,9],[13,19,12]]){if(db[table].some(row=>Array.isArray(row)&&row.length===length)){jyStorage.setItem('jy-inventory-before-location-removal-'+table,JSON.stringify(db[table]));db[table]=db[table].map(row=>Array.isArray(row)&&row.length===length?row.filter((_,i)=>i!==column):row);changed=true}}if(changed)save()}
+
 // Legacy inventory slots remain reserved so other tables keep their stable IDs.
 if(!window.JY_ENTERPRISE_MODE&&jyStorage.getItem('jy-inventory-retired-v124')!=='1'){if(db[5].length||db[6].length)jyStorage.setItem('jy-inventory-before-retirement-v124',JSON.stringify({stock:db[5],ledger:db[6]}));db[5]=[];db[6]=[];jyStorage.setItem('jy-inventory-retired-v124','1');save()}
 
