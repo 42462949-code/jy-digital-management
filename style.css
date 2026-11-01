@@ -919,13 +919,14 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 
 /* System introduction brand header; business pages retain their navigation. */
 .management-home-page{position:relative}
-.management-home-page .management-home-heading{height:72px;min-height:0;padding:8px 160px;display:flex;justify-content:center;align-items:center;background:#fff}
-.management-intro-brand{display:flex;justify-content:center;align-items:center;gap:18px;min-width:0}
-.management-intro-brand>img{width:100px;height:40px;object-fit:contain;flex:0 0 auto}
-.management-home-page .management-home-heading h1{display:flex;justify-content:center;align-items:center;gap:9px;margin:0;font-size:clamp(16px,1.3vw,22px);line-height:1.4;white-space:nowrap;color:#194777}
-.management-intro-titles{text-align:center;min-width:0}
-.management-intro-titles>p{margin:3px 0 0;font-size:13px;line-height:1.3;color:#577691;letter-spacing:3px}
-.management-intro-divider{font-weight:400;color:#8ca6be}
+.management-home-page .management-home-heading{box-sizing:border-box;width:100%;height:72px;min-height:0;padding:8px 160px;display:flex;justify-content:center;align-items:center;background:#fff}
+.management-intro-brand{display:grid;grid-template-columns:auto auto;grid-template-rows:auto auto;align-items:center;justify-content:center;column-gap:14px;row-gap:3px;width:max-content;max-width:100%;min-width:0;margin-inline:auto}
+.management-intro-brand>img{grid-column:1;grid-row:1;width:92px;height:34px;object-fit:contain}
+.management-home-page .management-home-heading h1{grid-column:2;grid-row:1;display:flex;justify-content:center;align-items:center;gap:9px;margin:0;font-size:clamp(16px,1.2vw,20px);font-weight:600;line-height:1.35;letter-spacing:.3px;white-space:nowrap;color:#243c57}
+.management-intro-titles{display:contents;text-align:center;min-width:0}
+.management-home-page .management-home-heading h1>span:last-child{color:#245f96;font-weight:600}
+.management-intro-titles>p{grid-column:1/-1;grid-row:2;justify-self:center;margin:0;font-size:12px;font-weight:500;line-height:1.4;color:#71869a;letter-spacing:4px;text-indent:4px}
+.management-intro-divider{font-weight:400;color:#b0bfce}
 .management-home-page .topbar{position:absolute;top:19px;right:16px;width:auto;min-height:0!important;height:34px;padding:0!important;background:transparent;border:0;gap:0;z-index:60;overflow:visible}
 .management-home-page #topTabs,.management-home-page .workspace-controls{display:none}
 .home-landing-actions{display:none}
@@ -933,5 +934,5 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 .management-home-page .home-landing-actions button{border:0!important;padding:2px!important;background:transparent!important;color:#245f9f;font:inherit;font-size:13px;line-height:24px;min-width:0;width:auto;white-space:nowrap;cursor:pointer;box-shadow:none!important}
 .management-home-page .home-landing-actions button:hover,.management-home-page .home-landing-actions button:focus-visible{color:#164987;text-decoration:underline;outline-offset:2px}
 .home-landing-actions>span{color:#9baebf}
-@media(max-width:1100px) and (min-width:701px){.management-home-page .management-home-heading{padding-left:130px;padding-right:130px}.management-intro-brand{gap:10px}.management-intro-brand>img{width:78px;height:34px}.management-home-page .management-home-heading h1{gap:5px;font-size:15px}.management-home-page .topbar{right:10px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:12px}}
-@media(max-width:700px){.management-home-page .management-home-heading{height:104px;padding:8px 10px 29px}.management-intro-brand{gap:10px}.management-intro-brand>img{width:70px;height:36px}.management-home-page .management-home-heading h1{display:block;font-size:14px;line-height:1.4;white-space:normal}.management-home-page .management-home-heading h1>span{display:block}.management-home-page .management-home-heading h1 .management-intro-divider{display:none}.management-intro-titles>p{margin-top:2px;font-size:11px}.management-home-page .topbar{top:76px;bottom:auto;right:10px;transform:none;height:24px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:11px;line-height:20px}}
+@media(max-width:1100px) and (min-width:701px){.management-home-page .management-home-heading{padding-left:130px;padding-right:130px}.management-intro-brand{column-gap:10px;row-gap:3px}.management-intro-brand>img{width:78px;height:32px}.management-home-page .management-home-heading h1{gap:5px;font-size:15px}.management-home-page .topbar{right:10px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:12px}}
+@media(max-width:700px){.management-home-page .management-home-heading{height:104px;padding:8px 10px 29px}.management-intro-brand{column-gap:10px;row-gap:3px}.management-intro-brand>img{width:70px;height:36px}.management-home-page .management-home-heading h1{display:block;font-size:14px;line-height:1.4;white-space:normal}.management-home-page .management-home-heading h1>span{display:block}.management-home-page .management-home-heading h1 .management-intro-divider{display:none}.management-intro-titles>p{margin:0;font-size:11px;letter-spacing:3px;text-indent:3px}.management-home-page .topbar{top:76px;bottom:auto;right:10px;transform:none;height:24px}.management-home-page .home-landing-actions{gap:5px}.management-home-page .home-landing-actions button{font-size:11px;line-height:20px}}
