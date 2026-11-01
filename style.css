@@ -889,3 +889,10 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 .wo-toolbar .icon-tool{position:relative;display:inline-flex;align-items:center;justify-content:center;min-width:44px}.wo-toolbar .icon-tool>span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
 
 .workspace [hidden],#modal [hidden]{display:none!important}
+
+/* The internal landing page intentionally has no content yet. */
+.management-home-heading{padding:18px 20px 10px}
+.management-home-heading h1{margin:0;color:#194777;font-size:24px;line-height:1.5}
+.management-home-page #topActions{display:none}
+.management-home-page #content{background:#fff;min-height:55vh;padding:0;border-radius:8px}
+@media(max-width:700px){.management-home-heading{padding:12px 10px 8px}.management-home-heading h1{font-size:20px}}
