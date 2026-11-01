@@ -452,7 +452,7 @@ def create_app(config=None):
                         current = record_by_id(con, record['id'], record['table'])
                         require(con, user, record['table'], 'view', current)
                 return prior['response_json']
-            output, seen = [], set()
+            output, seen, related = [], set(), set()
             for change in changes:
                 if not isinstance(change, dict) or type(change.get('table')) is not int:
                     fail(400, '变更格式无效')
@@ -477,6 +477,10 @@ def create_app(config=None):
                     fail(403, '已提交扫码记录不可修改或删除')
                 if action == 'delete':
                     if not old: fail(409, '记录已被删除')
+                    if table == 1:
+                        from .work_history import unlink_work_history
+                        sale_id = unlink_work_history(con, user, old)
+                        if sale_id: related.add(sale_id)
                     if table == 9:
                         used = con.execute('SELECT 1 FROM jy_records WHERE team_id=%s LIMIT 1', (record_id,)).fetchone()
                         assigned = con.execute('SELECT 1 FROM jy_users WHERE team_ids ? %s LIMIT 1', (record_id,)).fetchone()
@@ -517,6 +521,11 @@ def create_app(config=None):
                 else:
                     insert_record(con, user, table, values, information, meta, team, record_id=record_id)
                 output.append(public_record(record_by_id(con, record_id)))
+            for sale_id in sorted(related):
+                sale = record_by_id(con, sale_id, 0)
+                if in_scope(user, sale, scopes(con,user,0,'view')):
+                    output = [r for r in output if r['id'] != sale_id]
+                    output.append(public_record(sale))
             result = {'records': output}
             if request_id:
                 con.execute('INSERT INTO jy_requests(id,actor_id,signature,response_json) VALUES(%s,%s,%s,%s)', (request_id, user['id'], signature, Jsonb(result)))

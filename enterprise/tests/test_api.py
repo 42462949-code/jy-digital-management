@@ -270,3 +270,62 @@ def test_sales_close_reopen_restores_status_and_checks_permission(setup):
         assert client.post('/api/sales/reopen', json={'ids':[record['id']]}).status_code == 403
     actions = [r['action'] for r in admin.get('/api/admin/audit').json()['entries']]
     assert 'sales.reopen' in actions and 'sales.close' in actions
+
+
+def test_work_deletion_removes_only_linked_history_atomically_and_idempotently(setup):
+    app, admin, store = setup
+    team = create(admin,9,['1','生产','DELETE#','','',''])
+    sale = create(admin,0,sale_values('DELETE-SALE'))
+    works=[]
+    for quantity in ['40','60']:
+        draft=admin.post('/api/work-drafts',json={'ids':[sale['id']],'type':'贴合','teamId':team['id']}).json()['draft']
+        draft['rows'][0]['values'][9]=quantity
+        draft=admin.post('/api/work-drafts/'+draft['serverId']+'/save',json={'version':draft['serverVersion'],'draft':draft}).json()['draft']
+        assert admin.post('/api/work-drafts/'+draft['serverId']+'/print',json={'version':draft['serverVersion']}).status_code==200
+        confirmed=admin.post('/api/work-drafts/'+draft['serverId']+'/confirm',json={'version':draft['serverVersion']})
+        assert confirmed.status_code==200,confirmed.text
+        works.append(confirmed.json()['ids'][0])
+    records={r['id']:r for r in admin.get('/api/tables/1').json()['records']}
+    before=admin.get('/api/tables/0').json()['records'][0]
+    assert before['values'][26].endswith('：60')
+    # A stale second deletion rolls back the first deletion and its history change.
+    changes=[{'id':works[0],'table':1,'version':records[works[0]]['version'],'delete':True},{'id':works[1],'table':1,'version':999,'delete':True}]
+    assert admin.post('/api/sync',json={'changes':changes}).status_code==409
+    assert len(admin.get('/api/tables/1').json()['records'])==2
+    assert admin.get('/api/tables/0').json()['records'][0]['values'][26]==before['values'][26]
+    # Later quantity edits must still unlink the original confirmed history entry.
+    changed=records[works[0]]['values'].copy();changed[8]='35'
+    response=admin.post('/api/sync',json={'changes':[{'id':works[0],'table':1,'version':records[works[0]]['version'],'values':changed}]})
+    assert response.status_code==200,response.text
+    work=response.json()['records'][0]
+    request={'requestId':str(uuid.uuid4()),'changes':[{'id':work['id'],'table':1,'version':work['version'],'delete':True}]}
+    response=admin.post('/api/sync',json=request);assert response.status_code==200,response.text
+    assert admin.post('/api/sync',json=request).json()==response.json()
+    remaining=admin.get('/api/tables/0').json()['records'][0]
+    assert remaining['values'][26].endswith('：60') and '：40' not in remaining['values'][26]
+    assert any(r.get('table')==0 and r['id']==sale['id'] for r in response.json()['records'])
+    audit_entries=admin.get('/api/admin/audit?action=sales.work_print_deleted').json()['entries']
+    assert len(audit_entries)==1
+    # Work deletion permission authorizes this system-maintained side effect;
+    # users without sales-view permission receive no sales data.
+    role=admin.post('/api/admin/roles',json={'name':'工单删除专员','permissions':{'1':{'scope':'all','actions':['view','delete']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id')
+    user(admin,'work-deleter',[role_id])
+    with TestClient(app) as client:
+        login(client,'work-deleter',change=True)
+        record=client.get('/api/tables/1').json()['records'][0]
+        response=client.post('/api/sync',json={'changes':[{'id':record['id'],'table':1,'version':record['version'],'delete':True}]})
+        assert response.status_code==200,response.text
+        assert response.json()['records']==[{'id':record['id'],'deleted':True}]
+        assert client.get('/api/tables/0').status_code==403
+    assert admin.get('/api/tables/0').json()['records'][0]['values'][26]==''
+
+
+def test_legacy_work_history_matches_date_type_quantity_and_preserves_other_lines():
+    from enterprise.work_history import remove_history_line
+    values=['2026/11/1 13:26 18']+['']*13;values[8]='202.00';values[13]='贴合'
+    history='贴合2026/10/31：202\n贴合+2026/11/01+202.00\n泡棉2026/11/1：202\n备注'
+    assert remove_history_line(history,values)=='贴合2026/10/31：202\n泡棉2026/11/1：202\n备注'
+    duplicate='贴合2026/11/1：202\n贴合2026/11/1：202'
+    assert remove_history_line(duplicate,values)=='贴合2026/11/1：202'
+    assert remove_history_line('备注',values)=='备注'

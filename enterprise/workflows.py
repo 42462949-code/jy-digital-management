@@ -267,7 +267,8 @@ def register_workflows(app, store):
                 if number(values[8])<=0: fail(400,'工单数量须大于0')
                 remaining=remaining_quantity(con,sale['values_json'])
                 if Decimal(str(values[8]).replace(',','').replace('，','').strip())>remaining: fail(409,'本次工单数量超过剩余可下达数量，请重新生成或调整')
-                work=insert_record(con,user,1,values,entry['values'][0],team_id=row['team_id'],action='work.confirm')
+                log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
+                work=insert_record(con,user,1,values,entry['values'][0],meta={'printHistory':{'sourceId':sid,'entry':log}},team_id=row['team_id'],action='work.confirm')
                 work_ids.append(str(work['id']))
                 v=sale['values_json'].copy(); previous=str(v[26] or '').strip()
                 log=str(values[13])+confirmation_day+'：'+quantity_text(values[8])
@@ -477,6 +478,13 @@ def register_workflows(app, store):
                         old=data.get('scanMeta',[])[index] if index<len(data.get('scanMeta',[])) else {}
                         metadata={k:old[k] for k in ['unit','reviewStatus','submittedAt'] if k in old}
                         metadata['reviewStatus']='已确认' if metadata.get('submittedAt') else metadata.get('reviewStatus','草稿')
+                    if table==1:
+                        identities=data.get('workRowIdentities',[])
+                        prior=identities[index] if index<len(identities) else {}
+                        links=data.get('workPrintLinks',{})
+                        link=links.get(prior.get('key')) if isinstance(links,dict) and prior.get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else None
+                        if isinstance(link,dict) and isinstance(link.get('entry'),str) and isinstance(link.get('sourceId'),str):
+                            metadata['printHistory']={'sourceId':link['sourceId'],'entry':link['entry']}
                     team=teams.get(str(values[{1:1,2:4,8:3}[table]]).strip()) if table in [1,2,8] else None
                     insert_record(con,user,table,values,info.get((data.get('workRowIdentities',[])[index].get('key') if table==1 and index<len(data.get('workRowIdentities',[])) and data['workRowIdentities'][index].get('signature')==json.dumps(values,ensure_ascii=False,separators=(',',':')) else identity),''),metadata,team,action='migration.record')
             migration_id=str(uuid.uuid4())
