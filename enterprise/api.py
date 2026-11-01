@@ -283,7 +283,7 @@ def create_app(config=None):
         with store.connect() as con:
             user, session = current_user(request, con, True)
             teams = con.execute('SELECT id,values_json FROM jy_records WHERE table_id=9 ORDER BY values_json->>2').fetchall()
-            teams = [{'id': str(t['id']), 'name': str(t['values_json'][2]).strip()} for t in teams if is_admin(con, user) or
+            teams = [{'id': str(t['id']), 'name': str(t['values_json'][2]).strip(), 'department': str(t['values_json'][1]).strip()} for t in teams if is_admin(con, user) or
                      (str(t['id']) in user['team_ids'] or 'all' in scopes(con, user, 1, 'draft_edit') or
                       'all' in scopes(con,user,8,'create') or 'all' in scopes(con,user,8,'scan_correct'))]
             return {'user': user_public(con, user), 'csrf': session['csrf'], 'teams': teams, 'catalog': CATALOG, 'actions': ACTIONS}

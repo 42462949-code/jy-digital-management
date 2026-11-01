@@ -532,3 +532,19 @@ def test_scan_confirm_creates_production_exactly_once_and_checks_scope_atomicall
         admin.post('/api/admin/roles',json={'id':role_id,'version':stored['version'],'name':stored['name'],'permissions':{'8':{'scope':'teams','actions':['view']}}})
         assert scanner.post('/api/scan/submit',json=payload).status_code==403
     assert len(admin.get('/api/admin/audit?action=scan.generate_report').json()['entries'])==1
+
+
+def test_scanner_team_reference_includes_department_without_unassigned_team_access(setup):
+    app,admin,_=setup
+    assigned=create(admin,9,['1','贴合','部门联动A','','',''])
+    create(admin,9,['2','泡棉','部门联动B','','',''])
+    role=admin.post('/api/admin/roles',json={'name':'班组扫码员','permissions':{'8':{'scope':'teams','actions':['view','create','scan_submit']}}}).json()
+    role_id=role.get('id') or role.get('role',{}).get('id');user(admin,'scan-context',[role_id],[assigned['id']])
+    with TestClient(app) as scanner:
+        login(scanner,'scan-context',change=True)
+        assert scanner.get('/api/tables/9').status_code==403
+        reference=scanner.get('/api/auth/me').json()['teams']
+        assert reference==[{'id':assigned['id'],'name':'部门联动A','department':'贴合'}]
+        changed=assigned['values'].copy();changed[1]='泡棉'
+        assert admin.post('/api/sync',json={'changes':[{'id':assigned['id'],'table':9,'version':assigned['version'],'values':changed}]}).status_code==200
+        assert scanner.get('/api/auth/me').json()['teams'][0]['department']=='泡棉'
