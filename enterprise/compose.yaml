@@ -1,0 +1,52 @@
+services:
+  database:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: jiayang
+      POSTGRES_USER: jiayang
+      POSTGRES_PASSWORD: ${JY_DB_PASSWORD:?请设置数据库密码}
+    volumes:
+      - database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jiayang -d jiayang"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+  app:
+    build:
+      context: ..
+      dockerfile: enterprise/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://jiayang:${JY_DB_PASSWORD}@database:5432/jiayang
+      JY_PUBLIC_ORIGIN: https://${JY_DOMAIN:?请设置域名}
+      JY_BOOTSTRAP_USER: ${JY_BOOTSTRAP_USER:-admin}
+      JY_BOOTSTRAP_PASSWORD: ${JY_BOOTSTRAP_PASSWORD:?请设置初始管理员密码}
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client;c=http.client.HTTPConnection('127.0.0.1',8765,timeout=5);c.request('GET','/api/health');assert c.getresponse().status==200"]
+      interval: 15s
+      timeout: 7s
+      retries: 10
+  https:
+    image: caddy:2
+    restart: unless-stopped
+    environment:
+      JY_DOMAIN: ${JY_DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - caddy_config:/config
+    depends_on:
+      app:
+        condition: service_healthy
+volumes:
+  database:
+  certificates:
+  caddy_config:
