@@ -329,7 +329,7 @@ def register_workflows(app, store):
                 work=record_by_id(con,record_id,1); require(con,user,1,'generate_report',work)
                 v=work['values_json']; sid=str(v[12])
                 if con.execute("SELECT 1 FROM jy_records WHERE table_id=2 AND meta->>'sourceWorkId'=%s LIMIT 1",(str(work['id']),)).fetchone(): continue
-                values=[dt.datetime.now(UTC7).strftime('%Y-%m-%d'),v[2],v[5],v[8],v[1],0,v[10],'','','','',v[11],sid,dt.datetime.now(dt.timezone.utc).isoformat(),'','',v[13]]
+                values=[dt.datetime.now(UTC7).strftime('%Y-%m-%d'),v[2],v[5],v[8],v[1],0,v[10],'','','','',v[11],sid,dt.datetime.now(dt.timezone.utc).isoformat(),'','',v[13],v[14] or '']
                 created=insert_record(con,user,2,values,meta={'sourceWorkId':str(work['id'])},team_id=work['team_id'],action='work.generate_report')
                 output.append(str(created['id']))
             return {'ids':output}

@@ -422,3 +422,22 @@ def test_confirmed_document_print_is_read_only_complete_and_permission_checked(s
         assert printer.post('/api/work-orders/print-document',json={'documentNo':'MO-261101-02','phase':'print'}).status_code==403
     records=admin.get('/api/tables/1').json()['records']
     assert all(r['version']==1 and r['values'][8]=='10' for r in records)
+
+
+def test_production_report_carries_document_number_and_preserves_old_fields(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','生产','PROD#','','',''])
+    work=create(admin,1,['2026/11/1','PROD#','客户','SO','PO','产品','','58','100',0,'Y','备注','PROD-SALE','贴合','MO-261101-01'])
+    response=admin.post('/api/work-orders/generate-reports',json={'ids':[work['id']]})
+    assert response.status_code==200,response.text
+    report=admin.get('/api/tables/2').json()['records'][0]
+    assert len(report['values'])==18 and report['values'][17]=='MO-261101-01'
+    assert report['values'][3]=='100' and report['values'][12]=='PROD-SALE'
+    assert admin.post('/api/work-orders/generate-reports',json={'ids':[work['id']]}).json()['ids']==[]
+    from psycopg.types.json import Jsonb
+    legacy=report['values'][:17];legacy[7:11]=['3','5','保留原因','原责任人']
+    with store.connect(write=True) as con:
+        con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(legacy),report['id']))
+    store.initialize()
+    upgraded=admin.get('/api/tables/2').json()['records'][0]
+    assert upgraded['values'][:17]==legacy and upgraded['values'][17]=='MO-261101-01'
