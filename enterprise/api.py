@@ -125,6 +125,7 @@ def visible_rows(con, user, table, action='view'):
 
 
 def validate_values(table, values):
+    if table==8 and isinstance(values,list) and len(values)==10: values=values+['','']
     if table==1 and isinstance(values,list) and len(values)==14: values=values+['']
     if table not in BUSINESS_TABLES or not isinstance(values, list) or len(values) != len(CATALOG[str(table)]['fields']):
         fail(400, '表或字段数量不匹配')
@@ -150,6 +151,7 @@ def resolve_team(con, user, table, values, action, prior=None):
 
 
 def insert_record(con, user, table, values, information='', meta=None, team_id=None, action='record.create', record_id=None):
+    if table==8 and len(values)==10: values=values+['','']
     if table==1 and len(values)==14: values=values+[(meta or {}).get('documentNo','')]
     record_id = uid(record_id) if record_id else str(uuid.uuid4())
     con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',

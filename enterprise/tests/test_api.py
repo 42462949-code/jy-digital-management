@@ -376,3 +376,23 @@ def test_legacy_draft_gets_one_number_and_requires_print_again(setup):
     assert upgraded['documentNo'] and upgraded['rows'][0]['values'][15]==upgraded['documentNo']
     assert upgraded['printedRevision']==-1
     assert admin.get('/api/work-drafts').json()['drafts'][0]['documentNo']==upgraded['documentNo']
+
+
+def test_scan_work_number_and_order_id_survive_submit_and_legacy_upgrade(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','生产','SCAN#','','',''])
+    values=['2026-11-01 12:00:00','2026-11-01','贴合','SCAN#','客户','PO','产品','58','25','备注','MO-261101-01','1000357278']
+    scan=create(admin,8,values,meta={'unit':'Y','reviewStatus':'草稿','submittedAt':None})
+    assert admin.post('/api/scan/submit',json={'ids':[scan['id']]}).status_code==200
+    stored=admin.get('/api/tables/8').json()['records'][0]
+    assert stored['values'][10:]==['MO-261101-01','1000357278'] and stored['meta']['unit']=='Y'
+    changed=stored['values'].copy();changed[10]='CHANGED'
+    assert admin.post('/api/sync',json={'changes':[{'id':stored['id'],'table':8,'version':stored['version'],'values':changed,'meta':stored['meta']}]}).status_code==403
+    # Simulate the former ten-field storage and verify initialization keeps its receipt.
+    from psycopg.types.json import Jsonb
+    with store.connect(write=True) as con:
+        con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(values[:10]),stored['id']))
+    store.initialize()
+    upgraded=admin.get('/api/tables/8').json()['records'][0]
+    assert upgraded['values']==values[:10]+['','']
+    assert upgraded['meta']==stored['meta']

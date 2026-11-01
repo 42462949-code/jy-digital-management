@@ -15,7 +15,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-FIELDS = ['扫码时间','日期','工序','组别','客户','客户指令单','品名及加工明细','规格','数量','备注']
+FIELDS = ['扫码时间','日期','工序','组别','客户','客户指令单','品名及加工明细','规格','数量','备注','工单号','ID']
 ID = re.compile(r'^[A-Za-z0-9_-]{16,120}$')
 DB = os.environ.get('JY_DB_PATH', '/data/reports.sqlite3')
 ALLOWED = set(filter(None, os.environ.get('JY_ALLOWED_ORIGINS','https://42462949-code.github.io').split(',')))
@@ -69,9 +69,10 @@ def validate(records):
             raise ValueError('记录标识无效或重复')
         seen.add(record['id'])
         values = record.get('values')
-        if not isinstance(values,list) or len(values) != 10:
-            raise ValueError('扫码记录必须包含10个字段')
+        if not isinstance(values,list) or len(values) not in (10,12):
+            raise ValueError('扫码记录字段不完整')
         values = values.copy()
+        if len(values)==10: values += ['','']
         for i, value in enumerate(values):
             if i == 8:
                 if isinstance(value,bool) or not isinstance(value,(str,int,float)) or str(value).strip() == '':
@@ -217,7 +218,7 @@ class Handler(BaseHTTPRequestHandler):
             with connect() as con:
                 rows = con.execute('SELECT id,payload,received_at,username,unit FROM reports ORDER BY received_at DESC,id LIMIT ? OFFSET ?',(limit,offset)).fetchall()
                 count = con.execute('SELECT COUNT(*) FROM reports').fetchone()[0]
-            return self.reply(200, {'fields':FIELDS,'total':count,'records':[{'id':r[0],'values':json.loads(r[1]),'receivedAt':r[2],'username':r[3],'unit':r[4]} for r in rows]})
+            return self.reply(200, {'fields':FIELDS,'total':count,'records':[{'id':r[0],'values':(json.loads(r[1])+['',''])[:12],'receivedAt':r[2],'username':r[3],'unit':r[4]} for r in rows]})
         except ValueError:
             return self.reply(400, {'error':'分页参数错误'})
 
@@ -282,7 +283,7 @@ class Handler(BaseHTTPRequestHandler):
                 con.execute('INSERT INTO batches VALUES (?,?,?)',(batch,signature,canonical(response)))
             return self.reply(200,response)
         except (ValueError,TypeError,OverflowError):
-            return self.reply(400, {'error':'扫码数据格式无效，请检查10个字段及数量'})
+            return self.reply(400, {'error':'扫码数据格式无效，请检查字段及数量'})
         except sqlite3.Error:
             return self.reply(503, {'error':'后台暂时无法保存，请稍后重试'})
 
