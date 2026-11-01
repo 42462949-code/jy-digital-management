@@ -741,12 +741,12 @@ body.mobile-scan .scan-phone-heading #scanSoundPreview{grid-column:1;justify-sel
 
 /* Dense table chrome: 24px action icons and less vertical space above the grid. */
 body:not(.mobile-scan) .workspace.table-page .topbar{height:auto;min-height:50px;padding-top:4px;padding-bottom:4px;row-gap:4px}
-body:not(.mobile-scan) .workspace.table-page #topTabs{height:auto;margin-top:0}
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs{padding-top:0;padding-bottom:0}
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button{height:30px;min-height:30px;padding-top:0;padding-bottom:0}
+body:not(.mobile-scan) .workspace #topTabs{height:auto;margin-top:0}
+body:not(.mobile-scan) .workspace #topTabs .table-tabs{padding-top:0;padding-bottom:0}
+body:not(.mobile-scan) .workspace #topTabs .table-tabs button{height:30px;min-height:30px;padding-top:0;padding-bottom:0}
 body:not(.mobile-scan) .workspace.table-page .top-actions .actions{min-height:32px;padding:4px 14px;gap:7px}
-body:not(.mobile-scan) .workspace.table-page :is(.actions,.workspace-controls)>button.icon-tool{height:24px;padding:3px 7px}
-body:not(.mobile-scan) .workspace.table-page button.icon-tool svg{width:16px;height:16px;flex-basis:16px}
+body:not(.mobile-scan) .workspace:not(.management-home-page) :is(.actions,.workspace-controls)>button.icon-tool{height:24px;padding:3px 7px}
+body:not(.mobile-scan) .workspace:not(.management-home-page) button.icon-tool svg{width:16px;height:16px;flex-basis:16px}
 body:not(.mobile-scan) .workspace.table-page .sales-order-options{padding:0;gap:6px}
 body:not(.mobile-scan) .workspace.table-page .sales-order-options label{height:24px;min-height:24px;padding:1px 8px;line-height:20px}
 body:not(.mobile-scan) .workspace.table-page .data-content .filters{padding-top:4px;padding-bottom:4px;row-gap:4px}
@@ -759,7 +759,7 @@ body:not(.mobile-scan) .workspace #grid thead th{height:26px;padding:0}
 body:not(.mobile-scan) .workspace #grid .header-label{line-height:12px;padding-top:0;padding-bottom:1px}
 
 /* Lower the page navigation by another third, keeping readable text labels. */
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button{height:28px;min-height:28px;padding-top:0;padding-bottom:0;line-height:18px;border-radius:5px}
+body:not(.mobile-scan) .workspace #topTabs .table-tabs button{height:28px;min-height:28px;padding-top:0;padding-bottom:0;line-height:18px;border-radius:5px}
 
 /* Business pages start directly with text navigation; homepage and login branding remain. */
 body:not(.mobile-scan) .workspace .topbar{height:auto;min-height:32px;padding-top:4px;padding-bottom:4px;flex-wrap:nowrap;gap:12px}
@@ -838,7 +838,7 @@ body:not(.mobile-scan) .workspace .topbar{padding-bottom:0;align-items:flex-end}
 body:not(.mobile-scan) .workspace .topbar::after{display:none}
 body:not(.mobile-scan) .workspace .topbar #topTabs{align-self:stretch;display:flex;align-items:stretch}
 body:not(.mobile-scan) .workspace #topTabs .table-tabs{width:100%;align-items:flex-end}
-body:not(.mobile-scan) .workspace.table-page #topTabs .table-tabs button.active{height:29px;min-height:29px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
+body:not(.mobile-scan) .workspace #topTabs .table-tabs button.active{height:29px;min-height:29px;font-size:13px;padding-left:14px;padding-right:14px;border-radius:6px 6px 0 0}
 body:not(.mobile-scan) .workspace .topbar .workspace-controls{align-self:center;padding-bottom:3px}
 body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-items:flex-end}
 

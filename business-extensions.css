@@ -57,3 +57,16 @@
 /* Inventory Excel actions retain readable labels on desktop and phones. */
 .workspace .actions .inventory-excel-action.desktop-data-action{display:inline-flex!important}
 @media(max-width:700px){.hourly-output-page .hourly-actions .hourly-parameters{flex:1;min-width:0}.hourly-output-page .hourly-actions .hourly-parameters label{width:100%;justify-content:flex-end}}
+
+/* Excel import/export use the same compact arrow controls in every table. */
+.workspace .actions .excel-action{width:36px!important;min-width:36px!important;height:24px!important;flex:0 0 36px!important;padding:3px 7px!important;gap:0!important}
+.workspace .actions .excel-action>.action-icon{width:15px!important;height:15px!important;flex:none;flex-basis:15px!important}
+.workspace .actions .excel-action>span{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0}
+
+/* Report parameters sit beside the title; explanatory footer text was removed. */
+.workspace.hourly-output-page .top-actions .actions.hourly-actions{min-height:34px;padding:4px 16px}
+.hourly-output-page .hourly-heading{justify-content:flex-start;gap:24px;margin-bottom:8px;flex-wrap:wrap}
+.hourly-output-page .hourly-heading .hourly-parameters{margin-left:0;gap:14px}
+@media(max-width:700px){.workspace.hourly-output-page .top-actions .actions.hourly-actions{padding:4px 10px}.hourly-output-page .hourly-heading{gap:7px;margin-bottom:8px}.hourly-output-page .hourly-heading .hourly-parameters{width:100%;gap:8px;justify-content:flex-start}.hourly-output-page .hourly-heading .hourly-parameters label{width:auto;justify-content:flex-start}.hourly-output-page .hourly-heading .hourly-parameters input{width:125px}}
+@media(max-width:700px){.hourly-output-page .hourly-heading #hourlyMonth{width:160px}}
+.workspace .actions .excel-action[hidden]{display:none!important}
