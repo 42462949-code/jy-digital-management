@@ -469,6 +469,8 @@ def register_workflows(app, store):
                     values[0]='关闭';closed+=1
                     con.execute('UPDATE jy_records SET values_json=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(values),prior['id']))
                     audit(con,user,'sales.import.close_zero',0,str(prior['id']),before=public_record(prior),after={'values':values})
+            from .business_rules import refresh_derived
+            refresh_derived(con,user)
             summary={'read':len(incoming),'blank':blank,'matched':matched,'added':added,'updated':updated,'fields':fields,'closed':closed}
             audit(con,user,'sales.import',0,after=summary)
             return summary
@@ -516,19 +518,22 @@ def register_workflows(app, store):
 
     def migration_preview(data):
         tables=data.get('tables'); information=data.get('information',{}); scan_meta=data.get('scanMeta',[])
-        if not isinstance(tables,list) or len(tables) not in [10,11,12,14] or not isinstance(information,dict) or not isinstance(scan_meta,list): fail(400,'迁移文件格式无效')
+        if not isinstance(tables,list) or len(tables) not in [10,11,12,14,15] or not isinstance(information,dict) or not isinstance(scan_meta,list): fail(400,'迁移文件格式无效')
         counts,conflicts,warnings={},[],[]
         if tables[5] or tables[6]:warnings.append('原库存及出入库表已停用，旧字段记录不迁入新版表，请按新版Excel模板导入')
         if tables[3]:warnings.append('临时表中转记录仅保留在原备份，不作为正式业务数据迁入；请先核对原系统上传结果')
         for table in BUSINESS_TABLES:
             rows=tables[table] if table<len(tables) else []
             if not isinstance(rows,list) or len(rows)>100000: fail(400,'迁移记录数量无效')
+            if table==14:
+                if rows:warnings.append('账号权限需通过用户与权限导入并重新设置密码，不迁入脱敏密码记录')
+                counts[str(table)]=0;continue
             counts[str(table)]=sum(1 for v in rows if not (table==4 and isinstance(v,list) and not any(str(x or '').strip() for x in v[:10]))); seen=set()
             for index,values in enumerate(rows):
                 if table==4 and isinstance(values,list) and not any(str(x or "").strip() for x in values[:10]):continue
                 validate_values(table,values)
-                if table in (0,9):
-                    value=str(values[{0:21,1:12,9:2}[table]]).strip()
+                if table in (0,9,10):
+                    value=str(values[{0:21,1:12,9:2,10:0}[table]]).strip()
                     if value and value in seen: conflicts.append({'table':table,'row':index+1,'value':value,'message':'标识或班组名称重复'})
                     if value: seen.add(value)
                 if table==8 and index>=len(scan_meta): warnings.append('部分扫码记录缺少旧状态，按未提交迁入')
@@ -555,7 +560,7 @@ def register_workflows(app, store):
             tables=data['tables']; teams={}
             for values in tables[9]:
                 record=insert_record(con,user,9,values,action='migration.record');teams[str(values[2]).strip()]=str(record['id'])
-            for table in [t for t in BUSINESS_TABLES if t!=9]:
+            for table in [t for t in BUSINESS_TABLES if t not in [9,14]]:
                 info=data.get('information',{}).get(str(table),{})
                 for index,values in enumerate(tables[table] if table<len(tables) else []):
                     if table==4 and isinstance(values,list) and not any(str(x or '').strip() for x in values[:10]):continue

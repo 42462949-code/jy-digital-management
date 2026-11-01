@@ -140,6 +140,8 @@ def register_business_workflows(app,store):
                     con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(meta),row['id']));changed+=1
                     audit(con,user,'price.approve' if approve else 'price.unapprove',10,str(row['id']),after=meta)
                 output.append(public_record(record_by_id(con,row['id'],10)))
+            from .business_rules import refresh_derived
+            output=refresh_derived(con,user,output)
             result={'records':output,'changed':changed};con.execute('INSERT INTO jy_requests(id,actor_id,signature,response_json) VALUES(%s,%s,%s,%s)',(request_id,user['id'],signature,Jsonb(result)))
             return result
 

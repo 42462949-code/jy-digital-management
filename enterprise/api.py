@@ -127,6 +127,8 @@ def visible_rows(con, user, table, action='view'):
 
 
 def validate_values(table, values):
+    if table==0 and isinstance(values,list) and len(values)==27:values=values+['','']
+    if table==2 and isinstance(values,list) and len(values) in [17,18,20]:values=values.copy();values[3]='';values=values+['']*(22-len(values))
     if table in [12,13] and isinstance(values,list) and len(values)=={12:15,13:19}[table]:values=values[:{12:9,13:12}[table]]+values[{12:9,13:12}[table]+1:]
     if table==2 and isinstance(values,list) and len(values) in [17,18]: values=values+['']*(20-len(values))
     if table==4 and isinstance(values,list) and len(values)==10: values=values+['']*4
@@ -156,7 +158,8 @@ def resolve_team(con, user, table, values, action, prior=None):
 
 
 def insert_record(con, user, table, values, information='', meta=None, team_id=None, action='record.create', record_id=None):
-    if table==2 and len(values) in [17,18]: values=values+['']*(20-len(values))
+    if table==2 and len(values) in [17,18,20]: values=values+['']*(22-len(values))
+    if table==0 and len(values)==27:values=values+['','']
     if table==4 and len(values)==10:values=values+['']*4
     if table==8 and len(values)==10: values=values+['','']
     if table==1 and len(values)==14: values=values+[(meta or {}).get('documentNo','')]
@@ -164,12 +167,21 @@ def insert_record(con, user, table, values, information='', meta=None, team_id=N
     record_id = uid(record_id) if record_id else str(uuid.uuid4())
     from .business_rules import attendance,production,price
     try:
-        if table==2:values=production(values)
+        if table==0:
+            from .business_rules import sales_price
+            values=sales_price(con,values)
+        if table==2:
+            from .business_rules import apply_price
+            values,meta=apply_price(con,values,meta)
         if table==4:
             team=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(team_id,)).fetchone() if team_id else None
             values=attendance(values,record_id,user['username'],department=team['values_json'][1] if team else values[11])
         if table==10:
-            values,price_key=price(values,record_id);meta={**(meta or {}),'priceStatus':'未审核','priceKey':price_key}
+            line_no=None
+            if action=='migration.record' and str(values[0]).isdigit() and int(values[0])>0:
+                line_no=int(values[0]);con.execute("SELECT setval('jy_price_row_no',GREATEST(%s,(SELECT last_value FROM jy_price_row_no)),true)",(line_no,))
+            if line_no is None:line_no=con.execute("SELECT nextval('jy_price_row_no') AS n").fetchone()['n']
+            values,price_key=price(values,record_id,line_no);meta={**(meta or {}),'priceStatus':'未审核','priceKey':price_key}
     except ValueError as error:fail(400,str(error))
 
     con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
@@ -486,6 +498,7 @@ def create_app(config=None):
                 if not isinstance(change, dict) or type(change.get('table')) is not int:
                     fail(400, '变更格式无效')
                 table = change['table']
+                if table==14:fail(403,'请通过用户与权限管理窗口维护')
                 if table not in BUSINESS_TABLES:
                     fail(400, '不可直接修改此表')
                 record_id = uid(change['id'])
@@ -545,13 +558,18 @@ def create_app(config=None):
                 team = resolve_team(con, user, table, values, action, old)
                 from .business_rules import attendance,production,price
                 try:
-                    if table==2:values=production(values)
+                    if table==0:
+                        from .business_rules import sales_price
+                        values=sales_price(con,values)
+                    if table==2:
+                        from .business_rules import apply_price
+                        values,meta=apply_price(con,values,meta)
                     if table==4:
                         master=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(team,)).fetchone() if team else None
                         if not master or not str(master['values_json'][1]).strip():fail(400,'请先维护生产班组的部门')
                         values=attendance(values,record_id,user['username'],prior=old['values_json'] if old else None,department=master['values_json'][1])
                     if table==10:
-                        values,price_key=price(values,record_id);meta={**meta,'priceKey':price_key,'priceStatus':old['meta'].get('priceStatus','未审核') if old else '未审核'}
+                        values,price_key=price(values,record_id,old['values_json'][0] if old else values[0]);meta={**meta,'priceKey':price_key,'priceStatus':old['meta'].get('priceStatus','未审核') if old else '未审核'}
                 except ValueError as error:fail(400,str(error))
 
                 if not old:
@@ -568,6 +586,8 @@ def create_app(config=None):
                 if in_scope(user, sale, scopes(con,user,0,'view')):
                     output = [r for r in output if r['id'] != sale_id]
                     output.append(public_record(sale))
+            from .business_rules import refresh_derived
+            output=refresh_derived(con,user,output)
             result = {'records': output}
             if request_id:
                 con.execute('INSERT INTO jy_requests(id,actor_id,signature,response_json) VALUES(%s,%s,%s,%s)', (request_id, user['id'], signature, Jsonb(result)))
@@ -578,6 +598,10 @@ def create_app(config=None):
     register_workflows(app, store)
     from .business_workflows import register_business_workflows
     register_business_workflows(app,store)
+    from .inventory_workflows import register_inventory_workflows
+    register_inventory_workflows(app,store)
+    from .access_workflows import register_access_workflows
+    register_access_workflows(app,store)
 
     @app.get('/runtime-config.js')
     def runtime_config():

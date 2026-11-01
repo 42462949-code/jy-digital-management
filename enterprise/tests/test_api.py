@@ -16,6 +16,7 @@ def setup():
     store = Store(url)
     store.initialize()
     with store.connect(write=True) as con:
+        con.execute("ALTER SEQUENCE jy_price_row_no RESTART WITH 1");con.execute("ALTER SEQUENCE jy_access_row_no RESTART WITH 1")
         con.execute('TRUNCATE jy_daily_business_snapshot,jy_business_settings,jy_audit,jy_sessions,jy_records,jy_drafts,jy_migrations,jy_users,jy_roles,jy_login_attempts RESTART IDENTITY CASCADE')
     store.initialize()
     store.bootstrap('admin', 'Initial-test-password')
@@ -432,8 +433,8 @@ def test_production_report_carries_document_number_and_preserves_old_fields(setu
     response=admin.post('/api/work-orders/generate-reports',json=payload)
     assert response.status_code==200,response.text
     report=admin.get('/api/tables/2').json()['records'][0]
-    assert len(report['values'])==20 and report['values'][17]=='MO-261101-01'
-    assert report['values'][3]=='100' and report['values'][12]=='PROD-SALE'
+    assert len(report['values'])==22 and report['values'][17]=='MO-261101-01'
+    assert report['values'][3]=='PO' and report['values'][12]=='PROD-SALE'
     assert admin.post('/api/work-orders/generate-reports',json=payload).json()['ids']==response.json()['ids']
     from psycopg.types.json import Jsonb
     legacy=report['values'][:17];legacy[7:11]=['3','5','保留原因','原责任人']
@@ -523,7 +524,7 @@ def test_scan_confirm_creates_production_exactly_once_and_checks_scope_atomicall
         assert scanner.post('/api/scan/submit',json=payload).status_code==200
         reports=admin.get('/api/tables/2').json()['records'];assert len(reports)==1
         report=reports[0]
-        assert report['values']==['2026-11-01','客户','产品','','TRANSFER-A','12.5','Y','','','','','备注','TRANSFER-SALE','2026-11-01 10:20:30','','','贴合','MO-261101-01','','']
+        assert report['values']==['2026-11-01','客户','产品','','TRANSFER-A','12.5','Y','','','','','备注','TRANSFER-SALE','2026-11-01 10:20:30','','','贴合','MO-261101-01','','','','']
         assert report['meta']['sourceScanId']==first['id']
         scans={r['id']:r for r in admin.get('/api/tables/8').json()['records']}
         assert scans[first['id']]['meta']['productionReportId']==report['id']
@@ -573,11 +574,12 @@ def test_price_review_controls_four_field_match_and_locks_approved_rows(setup):
     create(admin,9,['1','贴合','PRICE-A','','',''])
     values=['','客户A','材料A','58','产品A','VND','1.25','']
     price=create(admin,10,values)
+    sale=sale_values('PRICE-ID');sale[4]='客户A';sale[7]='材料A';sale[8]='PO';sale[9]='58';sale[10]='产品A';create(admin,0,sale)
     work=create(admin,1,['2026-11-01','PRICE-A','客户A','SO','PO','产品A','材料A','58','100',0,'Y','','PRICE-ID','贴合','MO-261101-01'])
     def scan(spec='58'):
         return create(admin,8,['2026-10-31 10:20:30','2026-10-31','贴合','PRICE-A','客户A','PO','产品A',spec,'4','','MO-261101-01','PRICE-ID'],meta={'unit':'wrong'})
     first=scan();assert admin.post('/api/scan/submit',json={'ids':[first['id']]}).status_code==200
-    report=admin.get('/api/tables/2').json()['records'][0];assert report['values'][18:]==['',''] and report['values'][6]=='Y'
+    report=admin.get('/api/tables/2').json()['records'][0];assert report['values'][18:20]==['',''] and report['values'][6]=='Y'
     payload={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':price['id'],'version':price['version']}]}
     approved=admin.post('/api/price-list/review',json=payload);assert approved.status_code==200,approved.text
     assert admin.post('/api/price-list/review',json=payload).json()==approved.json()
@@ -588,12 +590,13 @@ def test_price_review_controls_four_field_match_and_locks_approved_rows(setup):
     assert admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':duplicate['id'],'version':duplicate['version']}]}).status_code==409
     second=scan();assert admin.post('/api/scan/submit',json={'ids':[second['id']]}).status_code==200
     reports=admin.get('/api/tables/2').json()['records'];matched=next(r for r in reports if r['meta'].get('sourceScanId')==second['id'])
-    assert matched['values'][18:]==['1.25','5'] and matched['meta']['priceId']==price['id']
+    assert matched['values'][18:]==['1.25','5','58','VND']
     stored_work=admin.get('/api/tables/1').json()['records'][0];assert stored_work['values'][9]=='8'
     assert admin.post('/api/scan/submit',json={'ids':[second['id']]}).status_code==200
     assert admin.get('/api/tables/1').json()['records'][0]['values'][9]=='8'
     # A manually filled price recomputes amount and ignores a client-forged total.
-    missing=next(r for r in reports if r['meta'].get('sourceScanId')==first['id']);v=missing['values'].copy();v[18]='0.3';v[19]='999'
+    missing=create(admin,2,['2026-10-31','无匹配客户','产品','','PRICE-A','4','Y','','','','','','','2026-10-31 10:00:00','','','贴合','','','','不同规格',''])
+    v=missing['values'].copy();v[18]='0.3';v[19]='999'
     result=admin.post('/api/sync',json={'changes':[{'id':missing['id'],'table':2,'version':missing['version'],'values':v}]})
     assert result.status_code==200 and result.json()['records'][0]['values'][19]=='1.2'
     reversed=admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':False,'records':[{'id':price['id'],'version':current['version']}]})
@@ -605,11 +608,12 @@ def test_entered_work_quantity_reports_validate_and_commit_atomically(setup):
     team=create(admin,9,['1','泡棉','MANUAL-A','','',''])
     price=create(admin,10,['','客户','MAT','58','产品','VND','0.3',''])
     admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':price['id'],'version':1}]})
+    sale=sale_values('MANUAL-ID');sale[7]='MAT';sale[8]='PO';sale[9]='58';sale[10]='产品';create(admin,0,sale)
     work=create(admin,1,['2026-11-01','MANUAL-A','客户','SO','PO','产品','MAT','58','20','0','Y','','MANUAL-ID','泡棉','MO-261101-02'],information='5')
     payload={'requestId':str(uuid.uuid4()),'records':[{'id':work['id'],'version':1,'information':'5'}],'date':'2026-10-31','department':'泡棉','teamId':team['id']}
     result=admin.post('/api/work-orders/generate-reports',json=payload);assert result.status_code==200,result.text
     report=admin.get('/api/tables/2').json()['records'][0]
-    assert report['values'][0]=='2026-10-31' and report['values'][4:7]==['MANUAL-A','5','Y'] and report['values'][16:] == ['泡棉','MO-261101-02','0.3','1.5']
+    assert report['values'][0]=='2026-10-31' and report['values'][4:7]==['MANUAL-A','5','Y'] and report['values'][16:] == ['泡棉','MO-261101-02','0.3','1.5','58','VND']
     row=admin.get('/api/tables/1').json()['records'][0];assert row['information']=='' and row['values'][9]=='5'
     assert admin.post('/api/work-orders/generate-reports',json=payload).json()==result.json()
     assert len(admin.get('/api/tables/2').json()['records'])==1
@@ -646,7 +650,7 @@ def test_only_excel_inventory_tables_are_available(setup):
     new_stock=create(admin,12,['1','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10',''])
     new_ledger=create(admin,13,['2026-10-02','NEW-DOC','入库','贴合','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10','','2026-10-02 10:00:00'])
     assert len(new_stock['values'])==14 and len(new_ledger['values'])==18
-    assert new_stock['values'][9:]==['0','10','0','10','']
+    assert new_stock['values'][9:]==['0','0','0','0','']
     assert new_ledger['values'][12:]==['0','10','0','10','','2026-10-02 10:00:00']
     assert '库位' not in admin.get('/api/admin/roles').json()['catalog']['12']['fields']
     assert '库位' not in admin.get('/api/admin/roles').json()['catalog']['13']['fields']
@@ -756,12 +760,180 @@ def test_inventory_location_removal_preserves_balances_and_is_idempotent(setup):
     a=create(admin,12,stock);b=create(admin,13,ledger)
     with store.connect(write=True) as con:
         for row,values in [(a,stock),(b,ledger)]:con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(values),row['id']))
-    store.initialize();store.initialize()
+    store.initialize()
+    version=admin.get('/api/tables/12').json()['records'][0]['version']
+    store.initialize()
     actual=admin.get('/api/tables/12').json()['records'][0]
     detail=admin.get('/api/tables/13').json()['records'][0]
-    assert actual['values']==stock[:9]+stock[10:] and actual['version']==a['version']+1
+    assert actual['values']==stock[:9]+['11','66','77','0','库存备注'] and actual['version']==version
     assert detail['values']==ledger[:12]+ledger[13:] and detail['version']==b['version']+1
     # Native new schemas are accepted; legacy uploads are also normalized above.
     values=actual['values'].copy();values[9]='99'
     updated=admin.post('/api/sync',json={'changes':[{'id':actual['id'],'table':12,'version':actual['version'],'values':values}]})
     assert updated.status_code==200 and updated.json()['records'][0]['values'][9]=='99'
+
+
+def test_attendance_rate_is_three_and_server_ignores_forged_cost(setup):
+    _,admin,_=setup
+    create(admin,9,['1','贴合','RATE-3','','',''])
+    row=create(admin,4,['2026-11-02','RATE-3','8','2','1','999','999','999','999',''])
+    assert row['values'][5:9]==['11','13','3','39']
+    values=row['values'].copy();values[2:5]=['0.1','0.2','0.3'];values[7]='1'
+    response=admin.post('/api/sync',json={'changes':[{'id':row['id'],'table':4,'version':row['version'],'values':values}]})
+    assert response.status_code==200,response.text
+    assert response.json()['records'][0]['values'][5:9]==['0.6','1','3','3']
+
+
+def test_price_serial_is_concurrent_unique_and_sales_production_fields_join(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    app,admin,store=setup
+    with TestClient(app) as second:
+        login(second,'admin','Changed-test-password')
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a=pool.submit(create,admin,10,['','客户A','MAT','58','产品','VND','0.3',''])
+            b=pool.submit(create,second,10,['','客户B','MAT','58','产品','VND','2',''])
+            a,b=a.result(),b.result()
+    assert {a['values'][0],b['values'][0]}=={'1','2'} and a['id']!=b['id']
+    changed=a['values'].copy();changed[0]='999'
+    assert admin.post('/api/sync',json={'changes':[{'id':a['id'],'table':10,'version':a['version'],'values':changed}]}).status_code==403
+    create(admin,9,['1','贴合','JOIN-A','','',''])
+    v=sale_values('JOIN-SALE');v[4]='客户A';v[7]='MAT';v[8]='CUSTOM-INSTRUCTION';v[9]='58';v[10]='产品'
+    sale=create(admin,0,v)
+    assert sale['values'][27:]==['','']
+    response=admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':a['id'],'version':a['version']}]})
+    assert response.status_code==200,response.text
+    sale=admin.get('/api/tables/0').json()['records'][0];assert sale['values'][27:]==['VND','0.3']
+    work=create(admin,1,['2026-11-02','JOIN-A','客户A','SO','OLD-INSTRUCTION','产品','MAT','OLD-SPEC','100','0','Y','','JOIN-SALE','贴合','MO-JOIN'])
+    scan=create(admin,8,['2026-11-02 09:00:00','2026-11-01','贴合','JOIN-A','客户A','OLD-INSTRUCTION','产品','OLD-SPEC','3','','MO-JOIN','JOIN-SALE'])
+    assert admin.post('/api/scan/submit',json={'ids':[scan['id']]}).status_code==200
+    production=admin.get('/api/tables/2').json()['records'][0]
+    assert production['values'][3]=='CUSTOM-INSTRUCTION' and production['values'][18:]==['0.3','0.9','58','VND']
+
+
+def test_account_table_enforces_actual_node_permissions_and_never_returns_password(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','贴合','ACCESS-A','','',''])
+    secret='Strong-test-130'
+    def access(node,permission='允许',password=''):
+        rid=str(uuid.uuid4());payload={'requestId':str(uuid.uuid4()),'changes':[{'id':rid,'version':0,'values':['','贴合','ACCESS-A','node-user',password,'班组长','即时库存',node,permission,'']}]} 
+        response=admin.post('/api/access/rows',json=payload);assert response.status_code==200,response.text
+        assert secret not in response.text
+        return response.json()['records'][0]
+    grant=access('全部操作',password=secret);deny=access('修改','禁止')
+    assert grant['values'][4]=='••••••'
+    with store.connect() as con:
+        account=con.execute("SELECT * FROM jy_users WHERE username='node-user'").fetchone()
+        assert account['password_hash'].startswith('$argon2') and secret not in str(con.execute('SELECT after_json FROM jy_audit WHERE table_id=14').fetchall())
+    stock=create(admin,12,['1','','CODE','物料','规格','58','白','Y','仓库','10','','','',''])
+    with TestClient(app) as member:
+        login(member,'node-user',secret,change=True)
+        assert member.get('/api/tables/12').status_code==200
+        assert member.get('/api/tables/0').status_code==403
+        assert member.get('/api/tables/14').status_code==403
+        assert member.post('/api/sync',json={'changes':[{'id':stock['id'],'table':12,'version':stock['version'],'values':stock['values']}]}).status_code==403
+        assert member.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[]}).status_code==403
+        assert admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':grant['id'],'version':grant['version'],'delete':True},{'id':deny['id'],'version':deny['version'],'delete':True}]}).status_code==200
+        assert member.get('/api/auth/me').status_code==401
+
+
+def test_inventory_vouchers_update_stock_atomically_and_retry_once(setup):
+    _,admin,_=setup
+    stock=create(admin,12,['1','','CODE','物料','规格','58','白','Y','仓库','100','','','',''])
+    expected_in=0;expected_out=0
+    for kind in ['采购入库','产品入库','其它入库','盘盈入库','采购退货','生产领料','销售出库','其它出库','盘亏出库','生产退料']:
+        current=next(r for r in admin.get('/api/tables/12').json()['records'] if r['id']==stock['id']);values=current['values'].copy();values[1]='3'
+        response=admin.post('/api/sync',json={'changes':[{'id':stock['id'],'table':12,'version':current['version'],'values':values}]});assert response.status_code==200,response.text
+        source=next(r for r in response.json()['records'] if r['id']==stock['id'])
+        payload={'requestId':str(uuid.uuid4()),'date':'2026-11-02','type':kind,'partner':'贴合','warehouse':'仓库','note':'有效单据','records':[{'id':stock['id'],'version':source['version'],'information':'3'}]}
+        result=admin.post('/api/inventory/post-voucher',json=payload);assert result.status_code==200,result.text
+        assert admin.post('/api/inventory/post-voucher',json=payload).json()==result.json()
+        inbound=kind in ['采购入库','产品入库','其它入库','盘盈入库','采购退货'];quantity=-3 if kind in ['采购退货','生产退料'] else 3
+        if inbound:expected_in+=quantity
+        else:expected_out+=quantity
+        current=admin.get('/api/tables/12').json()['records'][0]
+        assert current['values'][1]=='' and current['values'][10:13]==[str(expected_in),str(expected_out),str(100+expected_in-expected_out)]
+    assert len(admin.get('/api/tables/13').json()['records'])==10
+    # Duplicate inventory keys (code intentionally differs) may not double-post.
+    duplicate=create(admin,12,['2','2','OTHER-CODE','物料','规格','58','白','Y','仓库','0','','','',''])
+    rejected={'requestId':str(uuid.uuid4()),'date':'2026-11-02','type':'采购入库','partner':'贴合','warehouse':'仓库','records':[{'id':duplicate['id'],'version':duplicate['version'],'information':'2'}]}
+    assert admin.post('/api/inventory/post-voucher',json=rejected).status_code==409
+    assert len(admin.get('/api/tables/13').json()['records'])==10
+
+
+def test_inventory_batch_rejects_invalid_or_stale_rows_without_partial_writes(setup):
+    from concurrent.futures import ThreadPoolExecutor
+    app,admin,_=setup
+    first=create(admin,12,['1','2','A','物料A','规格','58','白','Y','仓库','10','','','',''])
+    second=create(admin,12,['2','bad','B','物料B','规格','58','白','Y','仓库','20','','','',''])
+    base={'date':'2026-11-02','type':'采购入库','partner':'贴合','warehouse':'仓库'}
+    batch={**base,'requestId':str(uuid.uuid4()),'records':[{'id':first['id'],'version':first['version'],'information':'2'},{'id':second['id'],'version':second['version'],'information':'bad'}]}
+    assert admin.post('/api/inventory/post-voucher',json=batch).status_code==400
+    assert admin.get('/api/tables/13').json()['records']==[]
+    assert next(r for r in admin.get('/api/tables/12').json()['records'] if r['id']==first['id'])['values'][1]=='2'
+    request={**base,'requestId':str(uuid.uuid4()),'records':[batch['records'][0]]}
+    assert admin.post('/api/inventory/post-voucher',json={**request,'warehouse':'其它仓库'}).status_code==400
+    with TestClient(app) as other:
+        login(other,'admin','Changed-test-password')
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            a=pool.submit(admin.post,'/api/inventory/post-voucher',json=request)
+            b=pool.submit(other.post,'/api/inventory/post-voucher',json={**request,'requestId':str(uuid.uuid4())})
+            responses=[a.result(),b.result()]
+    assert sorted(r.status_code for r in responses)==[200,409]
+    rows=admin.get('/api/tables/13').json()['records'];assert len(rows)==1
+    assert rows[0]['values'][12:15]==['10','2','0']
+    stock=next(r for r in admin.get('/api/tables/12').json()['records'] if r['id']==first['id']);assert stock['values'][1]=='' and stock['values'][12]=='12'
+
+
+def test_explicit_node_deny_overrides_existing_role_immediately(setup):
+    app,admin,_=setup
+    role=roles(admin)['管理只读'];user(admin,'old-role-user',[str(role['id'])])
+    with TestClient(app) as reader:
+        login(reader,'old-role-user',change=True)
+        assert reader.get('/api/tables/0').status_code==200
+        payload={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','old-role-user','','文员','销售订单列表','查看','禁止','']}]} 
+        result=admin.post('/api/access/rows',json=payload);assert result.status_code==200,result.text
+        assert reader.get('/api/tables/0').status_code==403
+        assert reader.get('/api/tables/14').status_code==403
+
+
+def test_legacy_price_uuid_upgrades_to_immutable_numeric_key_without_changing_record_id(setup):
+    from psycopg.types.json import Jsonb
+    _,admin,store=setup
+    row=create(admin,10,['','客户','MAT','58','产品','VND','1',''])
+    approved=admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':row['id'],'version':row['version']}]}).json()['records'][0]
+    values=approved['values'].copy();values[0]=row['id']
+    with store.connect(write=True) as con:con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(values),row['id']))
+    store.initialize();first=admin.get('/api/tables/10').json()['records'][0]
+    store.initialize();second=admin.get('/api/tables/10').json()['records'][0]
+    assert first['id']==second['id']==row['id'] and first['values'][0].isdigit() and first['values'][0]==second['values'][0]
+    assert first['meta']['priceStatus']=='已审核' and first['version']==second['version']
+
+
+def test_price_migration_preserves_numeric_numbers_and_advances_sequence(setup):
+    _,admin,_=setup
+    tables=[[] for _ in range(15)]
+    tables[10]=[['5','客户A','MAT','58','产品','VND','1',''],['9','客户B','MAT','58','产品','VND','2','']]
+    data={'tables':tables,'information':{},'scanMeta':[]}
+    preview=admin.post('/api/admin/migration/preview',json=data)
+    assert preview.status_code==200,preview.text
+    response=admin.post('/api/admin/migration/commit',json={'data':data,'digest':preview.json()['digest']})
+    assert response.status_code==200,response.text
+    assert {r['values'][0] for r in admin.get('/api/tables/10').json()['records']}=={'5','9'}
+    assert create(admin,10,['','客户C','MAT','58','产品','VND','3',''])['values'][0]=='10'
+
+
+def test_access_password_retry_never_accepts_changed_secret_or_clears_profile(setup):
+    _,admin,store=setup
+    team=create(admin,9,['1','贴合','PROFILE-A','','',''])
+    values=['','贴合','PROFILE-A','retry-user','Strong-retry-130','文员','即时库存','查看','允许','']
+    payload={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':values}]}
+    response=admin.post('/api/access/rows',json=payload)
+    assert response.status_code==200,response.text
+    assert admin.post('/api/access/rows',json=payload).json()==response.json()
+    changed=json.loads(json.dumps(payload));changed['changes'][0]['values'][4]='Different-retry-130'
+    assert admin.post('/api/access/rows',json=changed).status_code==409
+    extra=['','','','retry-user','','文员','即时库存','修改','禁止','']
+    assert admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':extra}]}).status_code==200
+    with store.connect() as con:
+        account=con.execute("SELECT * FROM jy_users WHERE username='retry-user'").fetchone()
+        assert account['department']=='贴合' and account['team_ids']==[team['id']]

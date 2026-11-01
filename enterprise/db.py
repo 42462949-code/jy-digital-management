@@ -16,13 +16,15 @@ from argon2 import PasswordHasher
 CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text())
 ACTIONS = ['view', 'create', 'update', 'delete', 'import', 'export', 'label_print',
            'report_print', 'close_order', 'reopen_order', 'generate_work', 'generate_report',
-           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price']
+           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price','generate_inventory']
 PASSWORDS = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
-BUSINESS_TABLES = [0, 1, 2, 4, 8, 9, 10,12,13]
+BUSINESS_TABLES = [0, 1, 2, 4, 8, 9, 10,12,13,14]
 TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
 UTC7 = dt.timezone(dt.timedelta(hours=7))
 
 SCHEMA = '''
+CREATE SEQUENCE IF NOT EXISTS jy_price_row_no;
+CREATE SEQUENCE IF NOT EXISTS jy_access_row_no;
 CREATE TABLE IF NOT EXISTS jy_document_sequences (day text PRIMARY KEY, last_value bigint NOT NULL CHECK (last_value>0));
 CREATE TABLE IF NOT EXISTS jy_roles (
  id uuid PRIMARY KEY, name text UNIQUE NOT NULL, description text NOT NULL DEFAULT '',
@@ -93,19 +95,31 @@ class Store:
     def initialize(self):
         with self.connect(write=True) as con:
             con.execute(SCHEMA)
+            prices=con.execute('SELECT * FROM jy_records WHERE table_id=10 ORDER BY created_at,id').fetchall()
+            maximum=max([int(r['values_json'][0]) for r in prices if str(r['values_json'][0]).isdigit()]+[0])
+            if maximum:con.execute("SELECT setval('jy_price_row_no',GREATEST(%s,(SELECT last_value FROM jy_price_row_no)),true)",(maximum,))
+            used=set()
+            for record in prices:
+                values=record['values_json'].copy();number=str(values[0])
+                if not number.isdigit() or int(number)<1 or str(int(number))!=number or number in used:
+                    number=str(con.execute("SELECT nextval('jy_price_row_no') AS n").fetchone()['n']);values[0]=number
+                    con.execute('UPDATE jy_records SET values_json=%s,version=version+1 WHERE id=%s',(Jsonb(values),record['id']))
+                used.add(number)
+            con.execute("CREATE UNIQUE INDEX IF NOT EXISTS jy_price_number_unique ON jy_records((values_json->>0)) WHERE table_id=10")
+            con.execute("CREATE UNIQUE INDEX IF NOT EXISTS jy_access_number_unique ON jy_records((values_json->>0)) WHERE table_id=14")
+            con.execute("CREATE UNIQUE INDEX IF NOT EXISTS jy_access_node_unique ON jy_records((values_json->>3),(values_json->>6),(values_json->>7)) WHERE table_id=14")
+
             con.execute("UPDATE jy_records SET values_json=values_json - 9,version=version+1 WHERE table_id=12 AND jsonb_array_length(values_json)=15")
             con.execute("UPDATE jy_records SET values_json=values_json - 12,version=version+1 WHERE table_id=13 AND jsonb_array_length(values_json)=19")
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\"]'::jsonb WHERE table_id=2 AND jsonb_array_length(values_json)=17")
             con.execute("UPDATE jy_records SET values_json=values_json || '[\"\",\"\"]'::jsonb WHERE table_id=8 AND jsonb_array_length(values_json)=10")
             con.execute("UPDATE jy_records SET values_json=values_json || jsonb_build_array(COALESCE(meta->>'documentNo','')) WHERE table_id=1 AND jsonb_array_length(values_json)=14")
             con.execute("UPDATE jy_records production SET values_json=jsonb_set(production.values_json,'{17}',to_jsonb(COALESCE(work.values_json->>14,''))) FROM jy_records work WHERE production.table_id=2 AND work.table_id=1 AND production.meta->>'sourceWorkId'=work.id::text AND COALESCE(production.values_json->>17,'')=''")
-            from .business_rules import production,stamp
+            from .business_rules import production,stamp,apply_price
             for record in con.execute('SELECT * FROM jy_records WHERE table_id=ANY(%s)',([2,4],)).fetchall():
                 old=record['values_json'];values=old
-                if record['table_id']==2:
-                    try: values=production(old)
-                    except ValueError: values=(old+['',''])[:20]
-                elif record['table_id']==4 and len(old)==10:
+                if record['table_id']==2:continue
+                if record['table_id']==4 and len(old)==10:
                     dept=''
                     if record['team_id']:
                         team=con.execute('SELECT values_json FROM jy_records WHERE id=%s',(record['team_id'],)).fetchone()
@@ -127,6 +141,8 @@ class Store:
                         if new not in permissions:permissions[new]=prior
                         changed=True
                 if changed:con.execute('UPDATE jy_roles SET permissions=%s,version=version+1 WHERE id=%s',(Jsonb(permissions),role['id']))
+            from .business_rules import refresh_derived
+            refresh_derived(con)
             if not con.execute('SELECT 1 FROM jy_roles LIMIT 1').fetchone():
                 for name, description, permissions, admin in role_templates():
                     con.execute('INSERT INTO jy_roles(id,name,description,permissions,system_admin) VALUES(%s,%s,%s,%s,%s)',
@@ -174,7 +190,7 @@ def role_templates():
     reporter = grants([1], ['view', 'label_print'], 'teams')
     reporter.update(grants([8], ['view', 'create', 'update', 'delete', 'scan_submit'], 'own'))
     yield '班组报工员', '本班组工单与本人报工', reporter, False
-    yield '仓库人员', '库存及出入库维护', grants([12,13], ['view', 'create', 'update', 'import', 'export']), False
+    yield '仓库人员', '库存及出入库维护', grants([12,13], ['view', 'create', 'update', 'import', 'export','generate_inventory']), False
     yield '人事人员', '考勤资料维护', grants([4], ['view', 'create', 'update', 'delete', 'import', 'export']), False
     yield '管理只读', '查看业务表与看板，导出另行授权', grants([0, 1, 2, 7, 9,10,11,12,13], ['view']), False
 
@@ -193,6 +209,10 @@ def scopes(con, user, table, action):
     roles = role_rows(con, user)
     if any(role['system_admin'] for role in roles):
         return {'all'}
+    if table==14:return set()
+    from .access_workflows import explicit_scopes
+    explicit=explicit_scopes(con,user,table,action)
+    if explicit is not None:return explicit
     output = set()
     for role in roles:
         grant = role['permissions'].get(str(table), {})
