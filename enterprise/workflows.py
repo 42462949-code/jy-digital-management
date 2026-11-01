@@ -512,25 +512,13 @@ def register_workflows(app, store):
 
     @app.post('/api/inventory/generate-work')
     async def inventory_work(request: Request):
-        data=await body(request)
-        with store.connect(write=True) as con:
-            user,_=current_user(request,con); ids=data.get('ids',[])
-            if not isinstance(ids,list) or not ids: fail(400,'请先选择库存记录')
-            output=[]
-            for record_id in set(ids):
-                inventory=record_by_id(con,record_id,5);require(con,user,5,'generate_work',inventory)
-                source=str(inventory['id']);v=inventory['values_json']
-                if con.execute("SELECT 1 FROM jy_records WHERE table_id=1 AND meta->>'sourceInventoryId'=%s LIMIT 1",(source,)).fetchone(): continue
-                if number(v[4])<=0: fail(400,'补产数量须大于0')
-                values=[stamp(),'','','','',v[0],'',v[3],v[4],0,v[6],'库存补产：'+str(v[2]),'INV-'+str(v[2]),'']
-                work=insert_record(con,user,1,values,meta={'sourceInventoryId':source},action='inventory.generate_work')
-                output.append(str(work['id']))
-            return {'ids':output}
+        fail(410,'原库存表已停用，请使用按Excel模板建立的即时库存表')
 
     def migration_preview(data):
         tables=data.get('tables'); information=data.get('information',{}); scan_meta=data.get('scanMeta',[])
         if not isinstance(tables,list) or len(tables) not in [10,11,12,14] or not isinstance(information,dict) or not isinstance(scan_meta,list): fail(400,'迁移文件格式无效')
         counts,conflicts,warnings={},[],[]
+        if tables[5] or tables[6]:warnings.append('原库存及出入库表已停用，旧字段记录不迁入新版表，请按新版Excel模板导入')
         if tables[3]:warnings.append('临时表中转记录仅保留在原备份，不作为正式业务数据迁入；请先核对原系统上传结果')
         for table in BUSINESS_TABLES:
             rows=tables[table] if table<len(tables) else []

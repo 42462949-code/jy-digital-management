@@ -641,15 +641,27 @@ def test_hourly_output_snapshots_respect_ten_am_cutoff_and_raw_amounts(setup,mon
     assert admin.get('/api/reports/hourly-output?month=2026-10').json()['target']=='42.5'
 
 
-def test_new_inventory_tables_do_not_change_original_tables(setup):
-    app,admin,_=setup
-    old_stock=create(admin,5,['产品','原仓','OLD-CODE','旧规格','10','9','Y','A1','2026-10-01'])
-    old_ledger=create(admin,6,['OLD-DOC','原仓','入库','OLD-CODE','产品','旧规格','10','Y','2026-10-01','原经办人'])
+def test_only_excel_inventory_tables_are_available(setup):
+    app,admin,store=setup
     new_stock=create(admin,12,['1','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10',''])
     new_ledger=create(admin,13,['2026-10-02','NEW-DOC','入库','贴合','','NEW-CODE','新产品','新规格','58','白','Y','新仓','B1','0','10','0','10','','2026-10-02 10:00:00'])
-    assert admin.get('/api/tables/5').json()['records'][0]['values']==old_stock['values']
-    assert admin.get('/api/tables/6').json()['records'][0]['values']==old_ledger['values']
     assert len(new_stock['values'])==15 and len(new_ledger['values'])==19
+    catalog=admin.get('/api/admin/roles').json()['catalog']
+    assert '5' not in catalog and '6' not in catalog
+    assert catalog['12']['name']=='即时库存' and catalog['13']['name']=='出入库明细表'
+    for old in [5,6]:
+        assert admin.get('/api/tables/'+str(old)).status_code==400
+        assert admin.post('/api/sync',json={'changes':[{'id':str(uuid.uuid4()),'table':old,'version':0,'values':[]}]}).status_code==400
+    assert admin.post('/api/inventory/generate-work',json={'ids':[]}).status_code==410
+    # Existing roles move to the matching current table, preserving explicit newer grants.
+    from psycopg.types.json import Jsonb
+    with store.connect(write=True) as con:
+        role=con.execute("SELECT id FROM jy_roles WHERE name='仓库人员'").fetchone()
+        con.execute('UPDATE jy_roles SET permissions=%s WHERE id=%s',(Jsonb({'5':{'actions':['view','import'],'scope':'own'},'6':{'actions':['view'],'scope':'all'},'12':{'actions':['view'],'scope':'teams'}}),role['id']))
+    store.initialize()
+    role=next(r for r in admin.get('/api/admin/roles').json()['roles'] if r['name']=='仓库人员')
+    assert '5' not in role['permissions'] and '6' not in role['permissions']
+    assert role['permissions']['12']['scope']=='teams' and role['permissions']['13']=={'actions':['view'],'scope':'all'}
 
 
 def test_attendance_two_leaders_preserve_independent_rows_and_scope(setup):

@@ -18,7 +18,7 @@ ACTIONS = ['view', 'create', 'update', 'delete', 'import', 'export', 'label_prin
            'report_print', 'close_order', 'reopen_order', 'generate_work', 'generate_report',
            'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price']
 PASSWORDS = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
-BUSINESS_TABLES = [0, 1, 2, 4, 5, 6, 8, 9, 10,12,13]
+BUSINESS_TABLES = [0, 1, 2, 4, 8, 9, 10,12,13]
 TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
 UTC7 = dt.timezone(dt.timedelta(hours=7))
 
@@ -116,6 +116,15 @@ class Store:
                 updated={**work['meta'],**work_state(work['values_json'],work['meta'].get('workStatus'))}
                 if updated!=work['meta']:
                     con.execute('UPDATE jy_records SET meta=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(updated),work['id']))
+            # Retire legacy inventory permissions without changing stable table IDs.
+            for role in con.execute('SELECT id,permissions FROM jy_roles').fetchall():
+                permissions=dict(role['permissions']);changed=False
+                for old,new in [('5','12'),('6','13')]:
+                    if old in permissions:
+                        prior=permissions.pop(old)
+                        if new not in permissions:permissions[new]=prior
+                        changed=True
+                if changed:con.execute('UPDATE jy_roles SET permissions=%s,version=version+1 WHERE id=%s',(Jsonb(permissions),role['id']))
             if not con.execute('SELECT 1 FROM jy_roles LIMIT 1').fetchone():
                 for name, description, permissions, admin in role_templates():
                     con.execute('INSERT INTO jy_roles(id,name,description,permissions,system_admin) VALUES(%s,%s,%s,%s,%s)',
@@ -163,9 +172,9 @@ def role_templates():
     reporter = grants([1], ['view', 'label_print'], 'teams')
     reporter.update(grants([8], ['view', 'create', 'update', 'delete', 'scan_submit'], 'own'))
     yield '班组报工员', '本班组工单与本人报工', reporter, False
-    yield '仓库人员', '库存及出入库维护', grants([5, 6], ['view', 'create', 'update', 'import', 'inventory_adjust']), False
+    yield '仓库人员', '库存及出入库维护', grants([12,13], ['view', 'create', 'update', 'import', 'export']), False
     yield '人事人员', '考勤资料维护', grants([4], ['view', 'create', 'update', 'delete', 'import', 'export']), False
-    yield '管理只读', '查看业务表与看板，导出另行授权', grants([0, 1, 2, 5, 6, 7, 9,10,11], ['view']), False
+    yield '管理只读', '查看业务表与看板，导出另行授权', grants([0, 1, 2, 7, 9,10,11,12,13], ['view']), False
 
 
 def role_rows(con, user):
@@ -178,6 +187,7 @@ def is_admin(con, user):
 
 
 def scopes(con, user, table, action):
+    if table in [5,6]:return set()
     roles = role_rows(con, user)
     if any(role['system_admin'] for role in roles):
         return {'all'}
