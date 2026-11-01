@@ -913,6 +913,6 @@ body:not(.mobile-scan) .workspace.table-page .topbar{padding-bottom:0;align-item
 
 .scan-context select{width:100%;min-width:0;max-width:100%;background:#fff;appearance:auto;color:inherit;cursor:pointer}
 
-/* Login credentials always start empty and keep the same white field surface. */
-.login-card .login-field input{background:#fff!important}
-.login-card .login-field input:is(:autofill,:-webkit-autofill),#backendUsername:is(:autofill,:-webkit-autofill),#backendPassword:is(:autofill,:-webkit-autofill){-webkit-box-shadow:0 0 0 1000px #fff inset!important;box-shadow:0 0 0 1000px #fff inset!important;-webkit-text-fill-color:#26364b!important;caret-color:#26364b}
+/* Login fields have no background fill in any interaction state. */
+#modal .login-card .login-field,#modal .login-card .login-field:is(:hover,:focus-within),#modal .login-card .login-field input,#modal .login-card .login-field input:is(:hover,:focus,:active),#backendUsername,#backendPassword{background-color:transparent!important;background-image:none!important;box-shadow:none!important}
+#modal .login-card .login-field input:is(:autofill,:-webkit-autofill),#backendUsername:is(:autofill,:-webkit-autofill),#backendPassword:is(:autofill,:-webkit-autofill){background-color:transparent!important;background-image:none!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-box-shadow:none!important;box-shadow:none!important;-webkit-text-fill-color:#234466!important;caret-color:#234466;transition:background-color 999999s ease-out 0s}
