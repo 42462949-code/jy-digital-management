@@ -118,3 +118,34 @@ html.phone-device .management-home-overview .management-guide-steps h4,html.phon
 html.phone-device .management-home-overview .management-guide-steps h4:after,html.phone-device .management-home-overview .management-guide-attendance-content>div:first-child h4:after{content:none}
 html.phone-device .management-home-overview p,html.phone-device .management-home-overview .management-guide-reminder p,html.phone-device .management-home-overview .management-guide-reports li{font-size:14px;line-height:1.75}
 }
+
+/* Input and output form two clearly separated reading regions. */
+.management-home-overview .management-overview-columns{display:grid;grid-template-columns:minmax(0,2.4fr) minmax(270px,1fr);gap:24px;align-items:stretch}
+.management-home-overview .management-input-panel,.management-home-overview .management-output-panel{min-width:0}
+.management-home-overview .management-output-panel{display:flex;flex-direction:column;border-left:1px solid #d5e1ed;padding-left:20px}
+.management-home-overview .management-guide-intro{display:block;min-height:0;padding:16px 20px;margin-bottom:12px;border-radius:10px}
+.management-home-overview h2{display:block;font-size:clamp(19px,1.5vw,28px);line-height:1.45;letter-spacing:0}
+.management-home-overview .management-output-question{background:linear-gradient(115deg,#173969,#14647b);flex:0 0 auto}
+.management-home-overview .management-output-question h2{font-size:clamp(17px,1.3vw,24px)}
+.management-home-overview .management-output-panel>.management-guide-output{display:flex;flex-direction:column;flex:1;min-height:0;margin:0}
+.management-home-overview .management-output-panel .management-guide-reports{display:grid;grid-template-rows:repeat(5,minmax(0,1fr));flex:1;gap:10px}
+.management-home-overview .management-output-panel .management-guide-reports li{display:flex;align-items:center;padding:11px 12px 11px 26px;line-height:1.6}
+.management-home-overview .management-output-panel .management-guide-reports li:before{top:50%;transform:translateY(-50%)}
+@media screen and (min-width:1000px){
+.management-home-overview .management-input-panel .management-guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.management-home-overview .management-input-panel .management-guide-card{grid-column:auto}
+.management-home-overview .management-output-panel .management-guide-output-intro{margin-bottom:10px}
+}
+@media screen and (max-width:999px){
+.management-home-overview .management-overview-columns{grid-template-columns:1fr;gap:22px}
+.management-home-overview .management-output-panel{display:block;border-left:0;padding-left:0;border-top:1px solid #d5e1ed;padding-top:20px}
+.management-home-overview .management-output-panel>.management-guide-output{display:block}
+.management-home-overview .management-output-panel .management-guide-reports{grid-template-rows:none;gap:10px}
+.management-home-overview h2,.management-home-overview .management-output-question h2{font-size:24px}
+}
+html.phone-device .management-home-overview .management-overview-columns{grid-template-columns:1fr;gap:22px}
+html.phone-device .management-home-overview .management-output-panel{display:block;border-left:0;padding-left:0;border-top:1px solid #d5e1ed;padding-top:20px}
+html.phone-device .management-home-overview .management-output-panel>.management-guide-output{display:block}
+html.phone-device .management-home-overview .management-output-panel .management-guide-reports{grid-template-rows:none}
+html.phone-device .management-home-overview .management-input-panel .management-guide-card{grid-column:auto}
+@media(max-width:700px){.management-home-overview .management-guide-intro{padding:20px}.management-home-overview h2,.management-home-overview .management-output-question h2{font-size:23px}}
