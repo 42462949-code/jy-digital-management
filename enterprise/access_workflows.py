@@ -6,7 +6,7 @@ from psycopg.types.json import Jsonb
 from .db import CATALOG,ACTIONS,PASSWORDS,public_record,audit,canonical
 
 MASK='••••••'
-NODES={'全部操作':'*','查看':'view','新增':'create','修改':'update','删除':'delete','导入EXCEL':'import','导出EXCEL':'export','标签打印':'label_print','工单打印':'report_print','下推生产工单':'generate_work','下推生产报表':'generate_report','关闭订单或工单':'close_order','取消关闭':'reopen_order','编辑工单草稿':'draft_edit','确定工单':'confirm_work','扫码确认':'scan_submit','更正扫码报工':'scan_correct','审核单价':'approve_price','反审单价':'unapprove_price','生成出入库单据':'generate_inventory','库存调整':'inventory_adjust'}
+NODES={'表标签可看':'view','全部操作':'*','查看':'view','新增':'create','修改':'update','删除':'delete','导入EXCEL':'import','导出EXCEL':'export','标签打印':'label_print','工单打印':'report_print','下推生产工单':'generate_work','下推生产报表':'generate_report','关闭订单或工单':'close_order','取消关闭':'reopen_order','编辑工单草稿':'draft_edit','确定工单':'confirm_work','扫码确认':'scan_submit','更正扫码报工':'scan_correct','审核单价':'approve_price','反审单价':'unapprove_price','生成出入库单据':'generate_inventory','库存调整':'inventory_adjust'}
 
 
 def explicit_scopes(con,user,table,action):
@@ -61,8 +61,7 @@ def register_access_workflows(app,store):
                 team=None
                 if values[2]:
                     teams=con.execute('SELECT * FROM jy_records WHERE table_id=9 AND values_json->>2=%s AND values_json->>1=%s',(values[2],values[1])).fetchall()
-                    if len(teams)!=1:fail(400,'部门与班组不对应')
-                    team=str(teams[0]['id'])
+                    if len(teams)==1:team=str(teams[0]['id'])
                 if con.execute('SELECT 1 FROM jy_records WHERE table_id=14 AND id<>%s AND values_json->>3=%s AND values_json->>6=%s AND values_json->>7=%s',(identifier,name,table,node)).fetchone():fail(409,'同一用户、表名和控制节点不能重复')
                 account=con.execute('SELECT * FROM jy_users WHERE username=%s',(name,)).fetchone();managed=not account or not account['role_ids']
                 if (password and password!=MASK) or not account:

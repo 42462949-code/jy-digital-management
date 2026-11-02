@@ -991,3 +991,31 @@ def test_access_legacy_denial_migrates_once_and_still_denies(setup):
     with TestClient(app) as member:
         login(member,'legacy-denial','')
         assert member.get('/api/tables/12').status_code==403
+
+
+def test_access_free_department_team_and_table_tab_visibility(setup):
+    app,admin,store=setup
+    create(admin,9,['1','主数据部门','已有班组','','',''])
+    username='tab-visibility'
+    def add(table,node,permission,department='自由填写部门',team='已有班组'):
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['',department,team,username,'','文员',table,node,permission,'']}]})
+        assert response.status_code==200,response.text
+        return response.json()['records'][0]
+    stock=add('即时库存','表标签可看','允许')
+    sale=add('销售订单列表','表标签可看','不允许',team='完全未登记班组')
+    add('销售订单列表','全部操作','允许')
+    assert stock['values'][1:3]==['自由填写部门','已有班组']
+    assert sale['values'][1:3]==['自由填写部门','完全未登记班组']
+    with store.connect() as con:
+        account=con.execute('SELECT * FROM jy_users WHERE username=%s',(username,)).fetchone()
+        assert account['department']=='自由填写部门' and account['team_ids']==[]
+    with TestClient(app) as member:
+        login(member,username,'')
+        permissions=member.get('/api/auth/me').json()['user']['permissions']
+        assert permissions['12']['view']==['all'] and permissions['0']['view']==[]
+        assert member.get('/api/tables/12').status_code==200 and member.get('/api/tables/0').status_code==403
+        # An administrator can restore the visible table without editing its other grants.
+        values=sale['values'].copy();values[8]='允许'
+        updated=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':sale['id'],'version':sale['version'],'values':values}]})
+        assert updated.status_code==200,updated.text
+        assert member.get('/api/tables/0').status_code==200
