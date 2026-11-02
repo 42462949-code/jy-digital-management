@@ -516,6 +516,8 @@ def create_app(config=None):
                         require(con, user, record['table'], 'view', current)
                 return prior['response_json']
             output, seen, related = [], set(), set()
+            production_keys=set()
+            from .production_work_totals import production_key,reconcile_production_work
             for change in changes:
                 if not isinstance(change, dict) or type(change.get('table')) is not int:
                     fail(400, '变更格式无效')
@@ -526,7 +528,7 @@ def create_app(config=None):
                 record_id = uid(change['id'])
                 if record_id in seen: fail(400, '变更记录重复')
                 seen.add(record_id)
-                old = con.execute('SELECT * FROM jy_records WHERE id=%s', (record_id,)).fetchone()
+                old = con.execute('SELECT * FROM jy_records WHERE id=%s'+(' FOR UPDATE' if table==2 else ''), (record_id,)).fetchone()
                 if old and old['table_id'] != table:
                     fail(403, '记录不属于此表')
                 action = 'delete' if change.get('delete') is True else 'update' if old else 'create'
@@ -550,6 +552,7 @@ def create_app(config=None):
                         used = con.execute('SELECT 1 FROM jy_records WHERE team_id=%s LIMIT 1', (record_id,)).fetchone()
                         assigned = con.execute('SELECT 1 FROM jy_users WHERE team_ids ? %s LIMIT 1', (record_id,)).fetchone()
                         if used or assigned: fail(409, '班组已有业务记录或分配用户，不能删除')
+                    if table==2:production_keys.add(production_key(old['values_json']))
                     con.execute('DELETE FROM jy_records WHERE id=%s', (record_id,))
                     audit(con, user, 'record.delete', table, record_id, before=public_record(old))
                     output.append({'id': record_id, 'deleted': True}); continue
@@ -582,7 +585,7 @@ def create_app(config=None):
                     require(con, user, 5, 'inventory_adjust', old)
                 if table == 9 and any(str(r['values_json'][2]).strip() == str(values[2]).strip() and str(r['id']) != record_id for r in con.execute('SELECT id,values_json FROM jy_records WHERE table_id=9').fetchall()):
                     fail(409, '生产班组名称不能重复')
-                team = resolve_team(con, user, table, values, action, old)
+                team = old['team_id'] if table==2 and old and str(values[4])==str(old['values_json'][4]) else resolve_team(con, user, table, values, action, old)
                 from .business_rules import attendance,production,price
                 try:
                     if table==0:
@@ -601,6 +604,8 @@ def create_app(config=None):
 
                 if not old:
                     require(con,user,table,'create',{'owner_id':user['id'],'department':user['department'],'team_id':team})
+                if old and table==2 and (str(values[5])!=str(old['values_json'][5]) or production_key(values)!=production_key(old['values_json'])):
+                    production_keys.update([production_key(old['values_json']),production_key(values)])
                 if old:
                     con.execute('UPDATE jy_records SET values_json=%s,information=%s,meta=%s,team_id=%s,version=version+1,updated_at=now() WHERE id=%s',
                                 (Jsonb(values), information, Jsonb(meta), team, record_id))
@@ -613,6 +618,7 @@ def create_app(config=None):
                 if in_scope(user, sale, scopes(con,user,0,'view')):
                     output = [r for r in output if r['id'] != sale_id]
                     output.append(public_record(sale))
+            output.extend(reconcile_production_work(con,user,production_keys))
             from .business_rules import refresh_derived
             output=refresh_derived(con,user,output)
             result = {'records': output}

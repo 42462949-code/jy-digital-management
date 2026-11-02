@@ -1303,6 +1303,10 @@ def test_production_report_draft_edits_commit_and_consume_only_retained_sources(
     assert sources[b['id']]['information']=='4' and sources[b['id']]['values'][9]=='0' and sources[b['id']]['version']==1
     assert admin.post('/api/work-orders/generate-reports',json=payload).json()==response.json()
     assert len(admin.get('/api/tables/2').json()['records'])==1
+    updated=report['values'].copy();updated[5]='8'
+    quantity_edit=admin.post('/api/sync',json={'changes':[{'id':report['id'],'table':2,'version':report['version'],'values':updated}]})
+    assert quantity_edit.status_code==200,quantity_edit.text
+    assert next(r for r in admin.get('/api/tables/1').json()['records'] if r['id']==a['id'])['values'][9]=='8'
 
 
 def test_production_report_draft_invalid_rows_rollback_reports_and_information(setup):
@@ -1330,3 +1334,51 @@ def test_production_report_draft_cannot_reassign_unallocated_team(setup):
         assert worker.post('/api/work-orders/generate-reports',json={'requestId':str(uuid.uuid4()),'draft':True,'records':[record]}).status_code==403
         record.update(department='贴合',equipment='DRAFT-SCOPE-A')
         ok=worker.post('/api/work-orders/generate-reports',json={'requestId':str(uuid.uuid4()),'draft':True,'records':[record]});assert ok.status_code==200,ok.text
+
+
+def test_production_changes_reconcile_work_by_document_and_order_line(setup):
+    app,admin,store=setup
+    create(admin,9,['1','贴合','TOTAL-A','','',''])
+    def work(doc,line,done):return create(admin,1,['2026-11-01','TOTAL-A','客户','SO','PO','产品','MAT','58','20',done,'Y','备注',line,'贴合',doc],information='9')
+    a=work('MO-A','SHARED','5');b=work('MO-B','SHARED','11');c=work('MO-A','OTHER','13')
+    def report(doc,line,qty):return create(admin,2,['2026-11-01','客户','产品','','TOTAL-A',qty,'Y','','','','','',''+line,'2026-11-01 09:00:00','','','贴合',doc,'','','58',''])
+    first=report('MO-A','SHARED','2.25');second=report('MO-A','SHARED','3.75');report('MO-B','SHARED','11');report('MO-A','OTHER','13');report('','SHARED','99')
+    values=first['values'].copy();values[5]='7.1'
+    payload={'requestId':str(uuid.uuid4()),'changes':[{'id':first['id'],'table':2,'version':first['version'],'values':values}]}
+    response=admin.post('/api/sync',json=payload);assert response.status_code==200,response.text
+    works={r['id']:r for r in admin.get('/api/tables/1').json()['records']}
+    assert works[a['id']]['values'][9]=='10.85' and works[a['id']]['meta']['workOwing']=='9.15'
+    assert works[a['id']]['information']=='9'
+    assert works[b['id']]['values'][9]=='11' and works[c['id']]['values'][9]=='13'
+    assert any(r.get('id')==a['id'] and r['values'][9]=='10.85' for r in response.json()['records'])
+    assert admin.post('/api/sync',json=payload).json()==response.json()
+    delete={'requestId':str(uuid.uuid4()),'changes':[{'id':second['id'],'table':2,'version':second['version'],'delete':True}]}
+    result=admin.post('/api/sync',json=delete);assert result.status_code==200,result.text
+    assert next(r for r in admin.get('/api/tables/1').json()['records'] if r['id']==a['id'])['values'][9]=='7.1'
+    assert admin.post('/api/sync',json=delete).json()==result.json()
+    latest=next(r for r in admin.get('/api/tables/2').json()['records'] if r['id']==first['id'])
+    assert admin.post('/api/sync',json={'changes':[{'id':first['id'],'table':2,'version':latest['version'],'delete':True}]}).status_code==200
+    final={r['id']:r for r in admin.get('/api/tables/1').json()['records']}
+    assert final[a['id']]['values'][9]=='0' and final[a['id']]['meta']['workOwing']=='20'
+    assert final[b['id']]['values'][9]=='11' and final[c['id']]['values'][9]=='13'
+
+
+def test_production_reconcile_is_atomic_and_does_not_require_work_edit_permission(setup):
+    app,admin,store=setup
+    team=create(admin,9,['1','贴合','TOTAL-SCOPE','','',''])
+    work=create(admin,1,['2026-11-01','TOTAL-SCOPE','客户','SO','PO','产品','MAT','58','20','5','Y','','TOTAL-ID','贴合','MO-TOTAL'])
+    reports=[create(admin,2,['2026-11-01','客户','产品','','TOTAL-SCOPE',qty,'Y','','','','','','TOTAL-ID','2026-11-01 09:00:00','','','贴合','MO-TOTAL','','','58','']) for qty in ['2','3']]
+    role=admin.post('/api/admin/roles',json={'name':'仅改生产明细','permissions':{'2':{'scope':'teams','actions':['view','update','delete']}}}).json();rid=role.get('id') or role['role']['id'];user(admin,'production-editor',[rid],[team['id']])
+    with TestClient(app) as editor:
+        login(editor,'production-editor',change=True)
+        values=reports[0]['values'].copy();values[5]='6'
+        response=editor.post('/api/sync',json={'changes':[{'id':reports[0]['id'],'table':2,'version':reports[0]['version'],'values':values}]})
+        assert response.status_code==200,response.text
+        assert all(r.get('table')!=1 for r in response.json()['records'])
+        assert editor.get('/api/tables/1').status_code==403
+    assert next(r for r in admin.get('/api/tables/1').json()['records'] if r['id']==work['id'])['values'][9]=='9'
+    before=admin.get('/api/tables/1').json()['records'];production_before=admin.get('/api/tables/2').json()['records']
+    result=admin.post('/api/sync',json={'changes':[{'id':reports[1]['id'],'table':2,'version':reports[1]['version'],'delete':True},{'id':reports[0]['id'],'table':2,'version':999,'values':values}]})
+    assert result.status_code==409
+    assert admin.get('/api/tables/1').json()['records']==before
+    assert admin.get('/api/tables/2').json()['records']==production_before
