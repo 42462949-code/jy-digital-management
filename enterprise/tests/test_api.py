@@ -937,3 +937,15 @@ def test_access_password_retry_never_accepts_changed_secret_or_clears_profile(se
     with store.connect() as con:
         account=con.execute("SELECT * FROM jy_users WHERE username='retry-user'").fetchone()
         assert account['department']=='贴合' and account['team_ids']==[team['id']]
+
+
+def test_inventory_voucher_appends_after_existing_ledger_and_preserves_batch_order(setup):
+    _,admin,_=setup
+    prior=create(admin,13,['2026-11-01','OLD','采购入库','贴合','','OLD','旧物料','','','','Y','仓库','0','1','0','','',''])
+    sources=[create(admin,12,[str(i),'2','CODE-'+str(i),'物料'+str(i),'规格','58','白','Y','仓库','10','','','','']) for i in [1,2]]
+    response=admin.post('/api/inventory/post-voucher',json={'requestId':str(uuid.uuid4()),'date':'2026-11-02','type':'采购入库','partner':'贴合','warehouse':'仓库','records':[{'id':r['id'],'version':r['version'],'information':'2'} for r in sources]})
+    assert response.status_code==200,response.text
+    rows=admin.get('/api/tables/13').json()['records']
+    assert [r['id'] for r in rows]==[prior['id'],*response.json()['ids']]
+    assert [r['values'][6] for r in rows]==['旧物料','物料1','物料2']
+    assert [r['id'] for r in admin.get('/api/tables/13').json()['records']]==[r['id'] for r in rows]

@@ -123,7 +123,8 @@ def visible_rows(con, user, table, action='view'):
         if 'department' in allowed and user['department']:
             conditions.append('department=%s'); args.append(user['department'])
     where = '' if 'all' in allowed else ' AND (' + (' OR '.join(conditions) or 'false') + ')'
-    return con.execute('SELECT * FROM jy_records WHERE table_id=%s' + where + ' ORDER BY created_at DESC,id', args).fetchall()
+    order = ' ORDER BY created_at ASC,id' if table==13 else ' ORDER BY created_at DESC,id'
+    return con.execute('SELECT * FROM jy_records WHERE table_id=%s' + where + order, args).fetchall()
 
 
 def validate_values(table, values):
@@ -184,7 +185,8 @@ def insert_record(con, user, table, values, information='', meta=None, team_id=N
             values,price_key=price(values,record_id,line_no);meta={**(meta or {}),'priceStatus':'未审核','priceKey':price_key}
     except ValueError as error:fail(400,str(error))
 
-    con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
+    created = 'clock_timestamp()' if table==13 else 'now()'
+    con.execute('INSERT INTO jy_records(id,table_id,values_json,information,meta,owner_id,department,team_id,created_at) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,' + created + ')',
                 (record_id, table, Jsonb(values), normalize_information(information), Jsonb(meta or {}), user['id'], user['department'], team_id))
     audit(con, user, action, table, record_id, after={'values': values, 'information': information})
     return record_by_id(con, record_id, table)
