@@ -26,7 +26,7 @@ def register_inventory_workflows(app,store):
             kind=data.get('type');partner=str(data.get('partner','')).strip();warehouse=str(data.get('warehouse','')).strip();note=str(data.get('note',''))
             try:day=date(data.get('date'))
             except ValueError as error:fail(400,str(error))
-            if kind not in TYPES or not partner or not warehouse:fail(400,'日期、单据类型、供应商名称&出入库部门、仓库名称为必填项')
+            if kind not in TYPES or not partner or not warehouse:fail(400,'日期、单据类型、出入库单位、仓库名称为必填项')
             if max(len(partner),len(warehouse),len(note))>16384:fail(400,'单据内容过长')
             counts={}
             for row in con.execute('SELECT values_json FROM jy_records WHERE table_id=12').fetchall():

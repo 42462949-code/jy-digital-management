@@ -77,7 +77,7 @@ def ensure_daily_snapshot(con,current=None):
             group=(day,str(row['owner_id']),str(row['team_id']) if row['team_id'] else None,row['department'])
             bucket=grouped.setdefault(group,{'date':day,'owner_id':group[1],'team_id':group[2],'department':group[3],'hours':Decimal(0),'amount':Decimal(0),'missing':0})
             try:
-                if row['table_id']==4:bucket['hours']+=decimal(v[6],True)
+                if row['table_id']==4:bucket['hours']+=decimal(v[5],True)
                 elif len(v)>=20 and str(v[19]).strip():bucket['amount']+=decimal(v[19])
                 else:bucket['missing']+=1
             except ValueError:continue
@@ -160,7 +160,14 @@ def register_business_workflows(app,store):
                 context.prec=180
                 for group in frozen['groups']:
                     if not group['date'].startswith(month+'-') or not in_scope(user,group,allowed):continue
-                    day=group['date'];hours[day]=hours.get(day,Decimal(0))+decimal(group['hours']);amounts[day]=amounts.get(day,Decimal(0))+decimal(group['amount']);missing+=group['missing']
+                    day=group['date'];amounts[day]=amounts.get(day,Decimal(0))+decimal(group['amount']);missing+=group['missing']
+                for row in con.execute('SELECT * FROM jy_records WHERE table_id=4').fetchall():
+                    if not in_scope(user,row,allowed):continue
+                    try:
+                        day=date(row['values_json'][0])
+                        if not day.startswith(month+'-') or day>frozen['cutoff']:continue
+                        hours[day]=hours.get(day,Decimal(0))+decimal(row['values_json'][5],True)
+                    except ValueError:continue
                 payload={'hours':{k:text(v) for k,v in hours.items()},'amounts':{k:text(v) for k,v in amounts.items()},'missingPrices':missing,'cutoff':frozen['cutoff'],'updatedAt':frozen['updatedAt']}
             preference=con.execute("SELECT payload FROM jy_business_settings WHERE name='hourly-targets'").fetchone()
             next_update=dt.datetime.combine(current.date()+(dt.timedelta(days=1) if current.hour>=10 else dt.timedelta()),dt.time(10),tzinfo=UTC7)
