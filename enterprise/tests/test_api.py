@@ -848,6 +848,8 @@ def test_inventory_vouchers_update_stock_atomically_and_retry_once(setup):
         result=admin.post('/api/inventory/post-voucher',json=payload);assert result.status_code==200,result.text
         assert admin.post('/api/inventory/post-voucher',json=payload).json()==result.json()
         inbound=kind in ['采购入库','产品入库','其它入库','盘盈入库','采购退货'];quantity=-3 if kind in ['采购退货','生产退料'] else 3
+        ledger=next(r for r in result.json()['records'] if r['id']==result.json()['ids'][0]);assert ledger['values'][14 if inbound else 13]==''
+        assert ledger['values'][12]==('100' if kind=='采购入库' else '')
         if inbound:expected_in+=quantity
         else:expected_out+=quantity
         current=admin.get('/api/tables/12').json()['records'][0]
@@ -880,7 +882,7 @@ def test_inventory_batch_rejects_invalid_or_stale_rows_without_partial_writes(se
             responses=[a.result(),b.result()]
     assert sorted(r.status_code for r in responses)==[200,409]
     rows=admin.get('/api/tables/13').json()['records'];assert len(rows)==1
-    assert rows[0]['values'][12:15]==['10','2','0']
+    assert rows[0]['values'][12:15]==['10','2','']
     stock=next(r for r in admin.get('/api/tables/12').json()['records'] if r['id']==first['id']);assert stock['values'][1]=='' and stock['values'][12]=='12'
 
 
@@ -1019,3 +1021,90 @@ def test_access_free_department_team_and_table_tab_visibility(setup):
         updated=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':sale['id'],'version':sale['version'],'values':values}]})
         assert updated.status_code==200,updated.text
         assert member.get('/api/tables/0').status_code==200
+
+
+def test_permission_node_names_match_toolbar_and_frontend_backend_catalogs():
+    import ast,re
+    from enterprise.access_workflows import NODES
+    root=Path(__file__).resolve().parents[2]
+    source=(root/'access-table.js').read_text()
+    match=re.search(r'const primaryNodes=(\{.*?\});const legacyNodes=(\{.*?\});',source)
+    assert match
+    primary,legacy=map(json.loads,match.groups())
+    assert {**primary,**legacy}==NODES
+    actions=ast.literal_eval(re.search(r'const actions=(\[.*?\]);',(root/'app.js').read_text()).group(1))
+    toolbar={('导入EXCEL' if '上传' in name else name.replace('EXCEL表','EXCEL')) for group in actions for name in group}
+    assert toolbar<=primary.keys()
+    assert {'保存','确定','订单关闭','下推生成生产工单','下推生成生产报表','启用摄像头','清空扫码记录','目标设置'}<=primary.keys()
+
+
+def test_actual_button_node_names_and_legacy_aliases_enforce_same_actions(setup):
+    app,admin,_=setup
+    def put(node,permission):
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','button-nodes','','文员','销售订单列表',node,permission,'']}]})
+        assert response.status_code==200,response.text
+        return response.json()['records'][0]
+    put('下推生成生产工单','允许');put('订单关闭','允许')
+    old=put('下推生产工单','不允许')
+    with TestClient(app) as member:
+        login(member,'button-nodes','')
+        permissions=member.get('/api/auth/me').json()['user']['permissions']['0']
+        assert permissions['generate_work']==[] and permissions['close_order']==['all']
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':old['id'],'version':old['version'],'delete':True}]})
+        assert response.status_code==200,response.text
+        assert member.get('/api/auth/me').json()['user']['permissions']['0']['generate_work']==['all']
+    # All literal names from the user's toolbar/import format are accepted.
+    for node in ['保存','确定','下推生成生产报表','关闭','新增班组','审核','反审','下退生成出入库单据','下推生成出入库单据','启用摄像头','启用设像头','清空扫码记录','目标设置']:
+        put(node,'不允许')
+
+
+def test_financial_fields_are_hidden_in_api_export_retry_and_preserved_on_edits(setup):
+    app,admin,_=setup
+    create(admin,9,['1','贴合','FIN-A','','',''])
+    price_row=create(admin,10,['','金融客户','MAT','SPEC','金融产品','VND','17.25',''])
+    reviewed=admin.post('/api/price-list/review',json={'requestId':str(uuid.uuid4()),'approve':True,'records':[{'id':price_row['id'],'version':price_row['version']}]})
+    assert reviewed.status_code==200,reviewed.text
+    values=sale_values('FIN-ID');values[4]='金融客户';values[7]='MAT';values[9]='SPEC';values[10]='金融产品'
+    sale=create(admin,0,values)
+    assert sale['values'][28]=='17.25'
+    production=create(admin,2,['2026-11-02','无匹配金融客户','金融产品','','FIN-A','4','Y','','','','','','','2026-11-02 10:00:00','','','贴合','','7.25','','SPEC','VND'])
+    assert production['values'][18:20]==['7.25','29']
+    grants=[]
+    for table in ['销售订单列表','各工序每日生产明细表','单价表']:
+        for node,permission in [('全部操作','允许'),('单价和金额查看','不允许')]:
+            response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','finance-user','','文员',table,node,permission,'']}]})
+            assert response.status_code==200,response.text
+            if node=='单价和金额查看':grants+=response.json()['records']
+    with TestClient(app) as member:
+        login(member,'finance-user','')
+        for table,indices in [(0,[28]),(2,[18,19]),(10,[6])]:
+            rows=member.get('/api/tables/'+str(table));assert rows.status_code==200,rows.text
+            assert all(row['values'][i]=='' for row in rows.json()['records'] for i in indices)
+            exported=member.post('/api/tables/'+str(table)+'/authorize',json={'action':'export'})
+            assert exported.status_code==200,exported.text
+            assert all(row['values'][i]=='' for row in exported.json()['records'] for i in indices)
+        hidden=member.get('/api/tables/2').json()['records'][0];edited=hidden['values'].copy();edited[5]='6';edited[11]='可以修改非金额字段'
+        payload={'requestId':str(uuid.uuid4()),'changes':[{'id':hidden['id'],'table':2,'version':hidden['version'],'values':edited}]}
+        saved=member.post('/api/sync',json=payload);assert saved.status_code==200,saved.text
+        result=next(r for r in saved.json()['records'] if r['id']==hidden['id']);assert result['values'][18:20]==['','']
+        assert member.post('/api/sync',json=payload).json()==saved.json()
+        authoritative=admin.get('/api/tables/2').json()['records'][0]
+        assert authoritative['values'][18:20]==['7.25','43.5']
+        tampered=result['values'].copy();tampered[18]='999'
+        assert member.post('/api/sync',json={'changes':[{'id':result['id'],'table':2,'version':result['version'],'values':tampered}]}).status_code==403
+        # Granting visibility restores the original values; no financial data was cleared.
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':g['id'],'version':g['version'],'values':[*(g['values'][:8]),'允许',g['values'][9]]} for g in grants]})
+        assert response.status_code==200,response.text
+        assert member.get('/api/tables/0').json()['records'][0]['values'][28]=='17.25'
+        assert member.get('/api/tables/2').json()['records'][0]['values'][18:20]==['7.25','43.5']
+
+
+def test_financial_visibility_defaults_to_existing_view_permission(setup):
+    app,admin,_=setup
+    row=create(admin,10,['','原有查看用户','MAT','SPEC','产品','VND','3.5',''])
+    role=roles(admin)['管理只读'];user(admin,'legacy-financial-reader',[str(role['id'])])
+    with TestClient(app) as reader:
+        login(reader,'legacy-financial-reader',change=True)
+        data=reader.get('/api/tables/10');assert data.status_code==200,data.text
+        assert data.json()['records'][0]['values'][6]=='3.5'
+        assert reader.get('/api/auth/me').json()['user']['permissions']['10']['financial_view']==['all']

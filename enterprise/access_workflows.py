@@ -6,7 +6,7 @@ from psycopg.types.json import Jsonb
 from .db import CATALOG,ACTIONS,PASSWORDS,public_record,audit,canonical
 
 MASK='••••••'
-NODES={'表标签可看':'view','全部操作':'*','查看':'view','新增':'create','修改':'update','删除':'delete','导入EXCEL':'import','导出EXCEL':'export','标签打印':'label_print','工单打印':'report_print','下推生产工单':'generate_work','下推生产报表':'generate_report','关闭订单或工单':'close_order','取消关闭':'reopen_order','编辑工单草稿':'draft_edit','确定工单':'confirm_work','扫码确认':'scan_submit','更正扫码报工':'scan_correct','审核单价':'approve_price','反审单价':'unapprove_price','生成出入库单据':'generate_inventory','库存调整':'inventory_adjust'}
+NODES={'表标签可看': 'view', '全部操作': '*', '查看': 'view', '新增': 'create', '修改': 'update', '保存': 'update', '确定': 'update', '删除': 'delete', '导入EXCEL': 'import', '导出EXCEL': 'export', '标签打印': 'label_print', '工单打印': 'report_print', '下推生成生产工单': 'generate_work', '下推生成生产报表': 'generate_report', '订单关闭': 'close_order', '关闭': 'close_order', '取消关闭': 'reopen_order', '新增班组': 'create', '审核': 'approve_price', '反审': 'unapprove_price', '下退生成出入库单据': 'generate_inventory', '启用摄像头': 'create', '清空扫码记录': 'delete', '目标设置': 'update', '编辑工单草稿': 'draft_edit', '确定工单': 'confirm_work', '扫码确认': 'scan_submit', '更正扫码报工': 'scan_correct', '库存调整': 'inventory_adjust', '单价和金额查看': 'financial_view', '下推生产工单': 'generate_work', '下推生产报表': 'generate_report', '关闭订单或工单': 'close_order', '审核单价': 'approve_price', '反审单价': 'unapprove_price', '生成出入库单据': 'generate_inventory', '下推生成出入库单据': 'generate_inventory', '启用设像头': 'create', '删除班组': 'delete'}
 
 
 def explicit_scopes(con,user,table,action):

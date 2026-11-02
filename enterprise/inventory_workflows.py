@@ -61,7 +61,7 @@ def register_inventory_workflows(app,store):
                 context.prec=180
                 for row,quantity in entries:
                     v=row['values_json'];quantity=-quantity if reverse else quantity
-                    values=[day,document,kind,partner,'',v[2],v[3],v[4],v[5],v[6],v[7],warehouse,'0' if inventory_key(v) in prior_keys else text(decimal(v[9],True)),text(quantity) if inbound else '0','0' if inbound else text(quantity),'',note,stamp()]
+                    values=[day,document,kind,partner,'',v[2],v[3],v[4],v[5],v[6],v[7],warehouse,'' if inventory_key(v) in prior_keys or decimal(v[9],True)==0 else text(decimal(v[9],True)),text(quantity) if inbound else '','' if inbound else text(quantity),'',note,stamp()]
                     ledger=insert_record(con,user,13,values,meta={'sourceStockId':str(row['id']),'voucherRequest':request_id},action='inventory.post_voucher');ids.append(str(ledger['id']))
                     stock=v.copy();stock[1]=''
                     con.execute('UPDATE jy_records SET values_json=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(stock),row['id']))

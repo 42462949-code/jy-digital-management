@@ -16,7 +16,7 @@ from argon2 import PasswordHasher
 CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text())
 ACTIONS = ['view', 'create', 'update', 'delete', 'import', 'export', 'label_print',
            'report_print', 'close_order', 'reopen_order', 'generate_work', 'generate_report',
-           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price','generate_inventory']
+           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price','generate_inventory','financial_view']
 PASSWORDS = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
 BUSINESS_TABLES = [0, 1, 2, 4, 8, 9, 10,12,13,14]
 TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
@@ -214,6 +214,7 @@ def scopes(con, user, table, action):
     from .access_workflows import explicit_scopes
     explicit=explicit_scopes(con,user,table,action)
     if explicit is not None:return explicit
+    if action=='financial_view':return scopes(con,user,table,'view')
     output = set()
     for role in roles:
         grant = role['permissions'].get(str(table), {})

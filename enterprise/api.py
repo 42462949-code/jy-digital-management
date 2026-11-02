@@ -247,6 +247,17 @@ def create_app(config=None):
         if request.method not in ('GET', 'HEAD', 'OPTIONS') and request.headers.get('Origin') != cfg.origin:
             return JSONResponse({'error': '不允许的请求来源'}, 403)
         response = await call_next(request)
+        actor=getattr(request.state,'actor',None)
+        if actor and request.url.path.startswith('/api/') and response.headers.get('content-type','').startswith('application/json'):
+            from .field_permissions import denied_financial_columns,redact_records
+            with store.connect() as con:
+                account=con.execute('SELECT * FROM jy_users WHERE id=%s',(actor['id'],)).fetchone()
+                denied=denied_financial_columns(con,account) if account else {}
+            if denied:
+                raw=b''.join([chunk async for chunk in response.body_iterator])
+                redacted=JSONResponse(redact_records(json.loads(raw),denied),status_code=response.status_code,background=response.background)
+                redacted.raw_headers=[(k,v) for k,v in response.raw_headers if k.lower() not in [b'content-length',b'content-type']]+redacted.raw_headers
+                response=redacted
         response.headers['Cache-Control'] = 'no-store' if request.url.path.startswith('/api') else 'no-cache'
         response.headers['X-Content-Type-Options'] = 'nosniff'
         response.headers['Referrer-Policy'] = 'same-origin'
@@ -534,6 +545,11 @@ def create_app(config=None):
                     audit(con, user, 'record.delete', table, record_id, before=public_record(old))
                     output.append({'id': record_id, 'deleted': True}); continue
                 values = validate_values(table, change.get('values'))
+                from .field_permissions import financial_columns
+                if not scopes(con,user,table,'financial_view'):
+                    for i in financial_columns(table):
+                        if str(values[i]).strip():fail(403,'没有修改单价或金额的权限')
+                        values[i]=old['values_json'][i] if old else ''
                 if table==9: values[2]=str(values[2]).strip()
                 if table==0 and not old and not str(values[21]).strip():
                     fail(400,'新增销售订单必须包含订单子表ID')
