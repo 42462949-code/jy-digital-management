@@ -247,3 +247,9 @@
 .access-column-resizer:hover,.access-column-resizer:focus-visible{background:#2365c633;outline:1px solid #2365c6;outline-offset:-1px}
 body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!important;user-select:none!important}
 @media(max-width:800px){#modal:has(>.access-user-desktop){--access-profile-and-frame:232px}}
+
+/* Match the desktop permission checklist to the sales workbook grid. */
+.access-user-desktop .access-permission-scroll{border-color:#548dd4}
+.access-user-desktop .access-permission-table thead th{height:26px;padding:0 6px;background:#548dd4;color:#fff;border:1px solid #fff;font-family:'Microsoft YaHei','微软雅黑',sans-serif;font-size:10pt;font-weight:400;line-height:12px;box-shadow:none}
+.access-user-desktop .access-permission-table tbody tr,.access-user-desktop .access-permission-table tbody td{height:29.25px}
+.access-user-desktop .access-permission-table tbody td{padding:2px 6px;border:1px solid #548dd4;line-height:18px}
