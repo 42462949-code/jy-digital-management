@@ -1382,3 +1382,51 @@ def test_production_reconcile_is_atomic_and_does_not_require_work_edit_permissio
     assert result.status_code==409
     assert admin.get('/api/tables/1').json()['records']==before
     assert admin.get('/api/tables/2').json()['records']==production_before
+
+
+def test_full_user_profile_edit_password_and_grants_atomic(setup):
+    app,admin,store=setup
+    from enterprise.db import PASSWORDS
+    from enterprise.password_vault import read_password
+    created=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','原部门','','profile163','Old163' if i==0 else '','原岗位','销售订单列表',node,'允许','备注']} for i,node in enumerate(['表标签可看','订单关闭'])]}).json()['records']
+    assert admin.get('/api/access/passwords').status_code==403
+    secret=admin.get('/api/access/user-password',params={'username':'profile163'})
+    assert secret.status_code==200 and secret.json()['password']=='Old163'
+    assert secret.headers['cache-control']=='no-store'
+    with TestClient(app) as ordinary:
+        login(ordinary,'profile163','Old163')
+        assert ordinary.get('/api/access/user-password',params={'username':'profile163'}).status_code==403
+    changes=[]
+    for i,r in enumerate(created):
+        v=r['values'].copy();v[1]='新部门';v[2]='新班组';v[5]='新岗位';v[8]='不允许';v[4]='New163' if i==0 else '****'
+        changes.append({'id':r['id'],'version':r['version'],'values':v})
+    mode={'username':'profile163','accountVersion':secret.json()['accountVersion'],'recordIds':[r['id'] for r in created],'passwordChanged':True,'passwordRecordId':created[0]['id']}
+    payload={'requestId':str(uuid.uuid4()),'userEdit':mode,'changes':changes}
+    bad={**payload,'requestId':str(uuid.uuid4()),'changes':changes[:1]}
+    assert admin.post('/api/access/rows',json=bad).status_code==400
+    with store.connect() as con:
+        account=con.execute("SELECT * FROM jy_users WHERE username='profile163'").fetchone()
+        assert account['department']=='原部门' and PASSWORDS.verify(account['password_hash'],'Old163')
+    result=admin.post('/api/access/rows',json=payload);assert result.status_code==200,result.text
+    assert admin.post('/api/access/rows',json=payload).json()==result.json()
+    assert all(r['values'][1:3]==['新部门','新班组'] and r['values'][4]=='****' and r['values'][5]=='新岗位' and r['values'][8]=='不允许' for r in result.json()['records'])
+    with store.connect() as con:
+        account=con.execute("SELECT * FROM jy_users WHERE username='profile163'").fetchone()
+        assert account['department']=='新部门' and PASSWORDS.verify(account['password_hash'],'New163')
+        assert read_password('profile163',account['password_cipher'])=='New163'
+        logs=json.dumps([dict(r) for r in con.execute('SELECT before_json,after_json FROM jy_audit').fetchall()],default=str)
+        assert 'Old163' not in logs and 'New163' not in logs
+    assert admin.get('/api/access/passwords').status_code==403
+    assert admin.post('/api/access/rows',json={**payload,'requestId':str(uuid.uuid4())}).status_code==409
+
+
+def test_full_user_edit_self_password_keeps_current_session(setup):
+    app,admin,store=setup
+    row=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','管理部','','admin','','管理员','销售订单列表','表标签可看','允许','']}]}).json()['records'][0]
+    secret=admin.get('/api/access/user-password',params={'username':'admin'}).json()
+    v=row['values'].copy();v[4]=''
+    payload={'requestId':str(uuid.uuid4()),'userEdit':{'username':'admin','accountVersion':secret['accountVersion'],'recordIds':[row['id']],'passwordChanged':True,'passwordRecordId':row['id']},'changes':[{'id':row['id'],'version':row['version'],'values':v}]}
+    result=admin.post('/api/access/rows',json=payload);assert result.status_code==200,result.text
+    assert admin.post('/api/access/rows',json=payload).json()==result.json()
+    assert admin.get('/api/auth/me').status_code==200
+    assert admin.get('/api/access/user-password',params={'username':'admin'}).json()['password']==''

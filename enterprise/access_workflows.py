@@ -75,6 +75,18 @@ def register_access_workflows(app,store):
             audit(con,actor,'access.passwords.view',14,after={'accounts':len(values)})
             return {'passwords':values}
 
+    @app.get('/api/access/user-password')
+    async def user_password(request:Request,username:str):
+        from .password_vault import read_password
+        from fastapi.responses import JSONResponse
+        with store.connect(write=True) as con:
+            actor,_=current_user(request,con);administrator(con,actor)
+            account=con.execute('SELECT * FROM jy_users WHERE username=%s',(username,)).fetchone()
+            if not account or not con.execute('SELECT 1 FROM jy_records WHERE table_id=14 AND values_json->>3=%s',(username,)).fetchone():fail(404,'用户不存在')
+            secret=read_password(username,account['password_cipher'])
+            audit(con,actor,'access.user-password.view',14,after={'username':username})
+            return JSONResponse({'password':secret,'accountVersion':account['version']},headers={'Cache-Control':'no-store'})
+
     @app.post('/api/access/rows')
     async def change(request:Request):
         data=await body(request);changes=data.get('changes',[])
@@ -82,11 +94,11 @@ def register_access_workflows(app,store):
         signed={**data,'changes':[{**c,'values':[('password supplied' if i==4 and v and v not in MASKS else '' if i==4 else v) for i,v in enumerate(c.get('values') or [])]} for c in changes if isinstance(c,dict)]}
         signature=hashlib.sha256(canonical(signed).encode()).hexdigest()
         with store.connect(write=True) as con:
-            actor,_=current_user(request,con);administrator(con,actor);request_id=uid(data.get('requestId'))
+            actor,actor_session=current_user(request,con);administrator(con,actor);request_id=uid(data.get('requestId'))
             prior=con.execute('SELECT * FROM jy_requests WHERE id=%s',(request_id,)).fetchone()
             if prior:
                 if str(prior['actor_id'])!=str(actor['id']) or prior['signature']!=signature:fail(409,'请求标识已使用')
-                supplied={str(c['values'][3]).strip():c['values'][4] for c in changes if isinstance(c.get('values'),list) and len(c['values'])==10 and c['values'][4] and c['values'][4] not in MASKS}
+                supplied={str(c['values'][3]).strip():c['values'][4] for c in changes if isinstance(c.get('values'),list) and len(c['values'])==10 and ((c['values'][4] and c['values'][4] not in MASKS) or ((data.get('userEdit') or {}).get('passwordChanged') and c.get('id')==data['userEdit'].get('passwordRecordId')))}
                 for name,password in supplied.items():
                     account=con.execute('SELECT password_hash FROM jy_users WHERE username=%s',(name,)).fetchone()
                     try:
@@ -94,6 +106,24 @@ def register_access_workflows(app,store):
                     except Exception:fail(409,'此请求已处理且密码内容已变化，请重新打开窗口核对')
                 return prior['response_json']
             if not isinstance(changes,list) or not 1<=len(changes)<=10000:fail(400,'用户权限记录数量无效')
+            user_edit=data.get('userEdit')
+            if user_edit:
+                name=user_edit.get('username')
+                account=con.execute('SELECT * FROM jy_users WHERE username=%s FOR UPDATE',(name,)).fetchone()
+                if not account or account['version']!=user_edit.get('accountVersion'):fail(409,'用户资料已变化，请重新打开窗口')
+                records=con.execute('SELECT * FROM jy_records WHERE table_id=14 AND values_json->>3=%s FOR UPDATE',(name,)).fetchall()
+                if {str(r['id']) for r in records}!=set(user_edit.get('recordIds',[])):fail(409,'用户权限清单已变化，请重新打开窗口')
+                allowed={str(r['id']):r for r in records}
+                if user_edit.get('passwordChanged') and user_edit.get('passwordRecordId') not in {c.get('id') for c in changes}:fail(400,'缺少密码修改记录')
+                for change in changes:
+                    prior_row=allowed.get(change.get('id'));values=change.get('values')
+                    if not prior_row or change.get('delete') or not isinstance(values,list) or len(values)!=10:fail(400,'只能修改当前用户的资料及权限')
+                    if any(values[i]!=prior_row['values_json'][i] for i in [0,3,6,7,9]):fail(400,'登录账号及权限节点不能修改')
+                    if not str(values[1]).strip():fail(400,'部门为必填项')
+                    if values[4] not in MASKS and not (user_edit.get('passwordChanged') and change['id']==user_edit.get('passwordRecordId')):fail(400,'密码修改标识无效')
+                profiles={tuple(c['values'][i] for i in [1,2,5]) for c in changes}
+                profile_changed=any(any(c['values'][i]!=allowed[c['id']]['values_json'][i] for i in [1,2,5]) for c in changes)
+                if profile_changed and (len(profiles)!=1 or {c['id'] for c in changes}!=set(allowed)):fail(400,'用户资料必须同步更新全部权限记录')
             if data.get('newUser'):
                 template=permission_template(con)
                 if len(changes)!=len(template):fail(400,'新增用户必须填写完整权限清单')
@@ -110,7 +140,7 @@ def register_access_workflows(app,store):
             for entry in changes:
                 identifier=uid(entry.get('id'))
                 if identifier in seen:fail(400,'权限记录重复')
-                seen.add(identifier);old=con.execute('SELECT * FROM jy_records WHERE id=%s'+(' FOR UPDATE' if data.get('permissionsOnly') else ''),(identifier,)).fetchone()
+                seen.add(identifier);old=con.execute('SELECT * FROM jy_records WHERE id=%s'+(' FOR UPDATE' if data.get('permissionsOnly') or user_edit else ''),(identifier,)).fetchone()
                 if old and old['table_id']!=14:fail(403,'记录不属于用户与权限表')
                 if old and old['version']!=entry.get('version') or not old and entry.get('version') not in [0,None]:fail(409,'用户权限记录已变化，请重新载入')
                 if data.get('permissionsOnly') and (entry.get('delete') or not old):fail(400,'权限修改只能更新已有记录的权限')
@@ -136,17 +166,19 @@ def register_access_workflows(app,store):
                     if len(teams)==1:team=str(teams[0]['id'])
                 if con.execute('SELECT 1 FROM jy_records WHERE table_id=14 AND id<>%s AND values_json->>3=%s AND values_json->>6=%s AND values_json->>7=%s',(identifier,name,table,node)).fetchone():fail(409,'同一用户、表名和控制节点不能重复')
                 account=con.execute('SELECT * FROM jy_users WHERE username=%s',(name,)).fetchone();managed=not account or not account['role_ids']
-                if (password and password not in MASKS) or not account:
-                    encoded=PASSWORDS.hash('' if password in MASKS else password)
+                if (user_edit and user_edit.get('passwordChanged') and identifier==user_edit.get('passwordRecordId')) or (password and password not in MASKS) or not account:
+                    encoded=PASSWORDS.hash(password if user_edit else '' if password in MASKS else password)
                 else:encoded=None
                 if not account:
                     user_id=str(uuid.uuid4());con.execute('INSERT INTO jy_users(id,username,name,department,team_ids,role_ids,password_hash,must_change_password) VALUES(%s,%s,%s,%s,%s,%s,%s,false)',(user_id,name,name,values[1],Jsonb([team] if team else []),Jsonb([]),encoded))
                 else:
-                    user_id=str(account['id']);con.execute('UPDATE jy_users SET department=%s,team_ids=%s,password_hash=COALESCE(%s,password_hash),must_change_password=CASE WHEN %s THEN false ELSE must_change_password END,enabled=true,version=version+1 WHERE id=%s',(values[1] if values[1] or values[2] else account['department'],Jsonb([team] if team else [] if values[1] else account['team_ids']),encoded,bool(encoded),user_id))
-                    if encoded:con.execute('DELETE FROM jy_sessions WHERE user_id=%s',(user_id,))
+                    user_id=str(account['id']);con.execute('UPDATE jy_users SET department=%s,team_ids=%s,password_hash=COALESCE(%s,password_hash),must_change_password=CASE WHEN %s THEN false ELSE must_change_password END,enabled=CASE WHEN %s THEN enabled ELSE true END,version=version+1 WHERE id=%s',(values[1] if values[1] or values[2] else account['department'],Jsonb([team] if team else [] if values[1] else account['team_ids']),encoded,bool(encoded),bool(user_edit),user_id))
+                    if encoded:
+                        if user_edit and user_id==str(actor['id']):con.execute('DELETE FROM jy_sessions WHERE user_id=%s AND token_hash<>%s',(user_id,actor_session['token_hash']))
+                        else:con.execute('DELETE FROM jy_sessions WHERE user_id=%s',(user_id,))
                 if encoded:
                     from .password_vault import seal_password
-                    con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(name,'' if password in MASKS else password),user_id))
+                    con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(name,password if user_edit else '' if password in MASKS else password),user_id))
                 values[0]=old['values_json'][0] if old else str(con.execute("SELECT nextval('jy_access_row_no') AS n").fetchone()['n']);values[4]=MASK;meta={'userId':user_id,'managedAccount':managed}
                 if old:con.execute("UPDATE jy_records SET values_json=%s,meta=%s,version=version+1,updated_at=now() WHERE id=%s",(Jsonb(values),Jsonb(meta),identifier))
                 else:con.execute('INSERT INTO jy_records(id,table_id,values_json,meta,owner_id,department) VALUES(%s,14,%s,%s,%s,%s)',(identifier,Jsonb(values),Jsonb(meta),actor['id'],actor['department']))
