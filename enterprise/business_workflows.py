@@ -177,9 +177,15 @@ def register_business_workflows(app,store):
             frozen=ensure_daily_snapshot(con,current);hours={};amounts={};missing=0
             with localcontext() as context:
                 context.prec=180
-                for group in frozen['groups']:
-                    if not group['date'].startswith(month+'-') or not in_scope(user,group,allowed):continue
-                    day=group['date'];amounts[day]=amounts.get(day,Decimal(0))+decimal(group['amount']);missing+=group['missing']
+                for row in con.execute('SELECT * FROM jy_records WHERE table_id=2').fetchall():
+                    if not in_scope(user,row,allowed):continue
+                    try:
+                        day=date(row['values_json'][0])
+                        if not day.startswith(month+'-') or day>frozen['cutoff']:continue
+                        value=row['values_json'][19]
+                        if not str(value).strip():missing+=1;continue
+                        amounts[day]=amounts.get(day,Decimal(0))+decimal(value)
+                    except ValueError:continue
                 for row in con.execute('SELECT * FROM jy_records WHERE table_id=4').fetchall():
                     if not in_scope(user,row,allowed):continue
                     try:
@@ -187,7 +193,7 @@ def register_business_workflows(app,store):
                         if not day.startswith(month+'-') or day>frozen['cutoff']:continue
                         hours[day]=hours.get(day,Decimal(0))+decimal(row['values_json'][5],True)
                     except ValueError:continue
-                payload={'hours':{k:text(v) for k,v in hours.items()},'amounts':{k:text(v) for k,v in amounts.items()},'missingPrices':missing,'cutoff':frozen['cutoff'],'updatedAt':frozen['updatedAt']}
+                payload={'hours':{k:text(v) for k,v in hours.items()},'amounts':{k:text(v) for k,v in amounts.items()},'missingPrices':missing,'cutoff':frozen['cutoff'],'updatedAt':current.isoformat()}
             preference=con.execute("SELECT payload FROM jy_business_settings WHERE name='hourly-targets'").fetchone()
             next_update=dt.datetime.combine(current.date()+(dt.timedelta(days=1) if current.hour>=10 else dt.timedelta()),dt.time(10),tzinfo=UTC7)
             return {**payload,'target':(preference['payload'].get(month,'35') if preference else '35'),'nextUpdate':next_update.isoformat()}

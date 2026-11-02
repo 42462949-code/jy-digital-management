@@ -622,7 +622,7 @@ def test_entered_work_quantity_reports_validate_and_commit_atomically(setup):
     assert len(admin.get('/api/tables/2').json()['records'])==1
 
 
-def test_hourly_output_snapshots_respect_ten_am_cutoff_and_raw_amounts(setup,monkeypatch):
+def test_hourly_output_live_totals_respect_ten_am_cutoff_and_raw_amounts(setup,monkeypatch):
     import datetime as dt
     import enterprise.business_workflows as workflow
     app,admin,_=setup
@@ -642,7 +642,13 @@ def test_hourly_output_snapshots_respect_ten_am_cutoff_and_raw_amounts(setup,mon
     assert admin.get('/api/reports/hourly-output?month=2026-10&action=export').json()['hours']=={'2026-10-01':'13'}
     changed=prod['values'].copy();changed[18]='50'
     admin.post('/api/sync',json={'changes':[{'id':prod['id'],'table':2,'version':1,'values':changed}]})
-    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['amounts']['2026-10-01']=='100'
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['amounts']['2026-10-01']=='200'
+    extra_values=values.copy();extra_values[5]='3';extra_values[18]='0.1'
+    extra=create(admin,2,extra_values)
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['amounts']=={'2026-10-01':'200.3'}
+    assert admin.get('/api/reports/hourly-output?month=2026-10&action=export').json()['amounts']=={'2026-10-01':'200.3'}
+    assert admin.post('/api/sync',json={'changes':[{'id':extra['id'],'table':2,'version':extra['version'],'delete':True}]}).status_code==200
+    assert admin.get('/api/reports/hourly-output?month=2026-10').json()['amounts']=={'2026-10-01':'200'}
     monkeypatch.setattr(workflow,'now_local',lambda:dt.datetime(2026,10,3,10,0,tzinfo=workflow.UTC7))
     second=admin.get('/api/reports/hourly-output?month=2026-10').json()
     assert second['cutoff']=='2026-10-02' and second['amounts']=={'2026-10-01':'200','2026-10-02':'100'}
@@ -730,12 +736,16 @@ def test_frozen_hourly_snapshot_has_shared_target_and_scoped_totals(setup,monkey
     assert admin.get('/api/reports/hourly-output?month=2026-10').json()['hours']['2026-10-01']=='28'
     changed=a['values'].copy();changed[2]='80'
     assert admin.post('/api/sync',json={'changes':[{'id':a['id'],'table':4,'version':1,'values':changed}]}).status_code==200
+    create(admin,2,['2026-10-01','客户','产品','','SCOPE-A','1','Y','','','','','','','2026-10-01 09:00:00','','','贴合','','0.1',''])
+    create(admin,2,['2026-10-01','客户','产品','','SCOPE-B','1','Y','','','','','','','2026-10-01 09:00:00','','','泡棉','','0.2',''])
     with TestClient(app) as reader:
         login(reader,'report-reader',change=True)
         assert reader.get('/api/tables/4').status_code==403
         assert reader.get('/api/reports/hourly-output?month=2026-10&action=export').status_code==403
         scoped=reader.get('/api/reports/hourly-output?month=2026-10').json()
         assert scoped['hours']=={'2026-10-01':'80'}
+        assert scoped['amounts']=={'2026-10-01':'0.1'}
+        assert reader.get('/api/tables/2').status_code==403
         assert 'groups' not in scoped
         assert reader.post('/api/reports/hourly-output/target',json={'month':'2026-10','target':'999'}).status_code==403
         assert admin.post('/api/reports/hourly-output/target',json={'month':'2026-10','target':'42'}).status_code==200
