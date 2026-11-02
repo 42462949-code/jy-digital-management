@@ -75,3 +75,35 @@
 .workspace #grid tbody tr.inventory-duplicate td{background:#ffdada!important;color:#a81925!important}.inventory-duplicate-tools{display:inline-flex;align-items:center;gap:10px;font-size:12px}.inventory-duplicate-tools label{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}.inventory-duplicate-warning{color:#b71f31}.inventory-type-options{grid-column:1/-1;border:1px solid #ccdcee;border-radius:6px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;padding:14px}.inventory-type-options label{display:flex;flex-direction:row;align-items:center;gap:5px;white-space:nowrap}.inventory-type-options input{width:15px;min-height:15px;height:15px}.inventory-voucher-note{grid-column:1/-1}@media(max-width:700px){.inventory-type-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.inventory-duplicate-tools{flex-wrap:wrap}}
 
 .workspace .actions .business-form-action[hidden]{display:none!important}.access-editor select,.access-editor input{min-width:0}
+
+/* Fit the complete stock voucher form to the dialog's available width. */
+#modal:has(>.inventory-voucher){width:min(760px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:20px}
+#modal>.inventory-voucher{width:100%;max-width:100%;min-width:0}
+.inventory-voucher .business-entry-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.inventory-voucher .business-entry-grid>label,.inventory-voucher .inventory-type-options{min-width:0;min-inline-size:0}
+.inventory-voucher .inventory-type-options{margin:0;padding:12px;gap:10px}
+.inventory-voucher .inventory-type-options input{flex:0 0 15px;width:15px;min-width:15px;margin:0}
+.inventory-voucher .business-form-help{overflow-wrap:anywhere;line-height:1.5;margin:10px 0}
+.inventory-voucher .error:empty{display:none}
+.inventory-voucher .business-entry-grid textarea{resize:vertical;min-height:56px;max-width:100%;box-sizing:border-box;font:inherit}
+.inventory-voucher .dialogfoot{margin-top:12px}
+@media(max-width:700px){
+ #modal:has(>.inventory-voucher){padding:16px}
+ .inventory-voucher h3{font-size:19px;margin-bottom:12px}
+ .inventory-voucher .business-entry-grid{gap:10px}
+ .inventory-voucher .business-entry-grid>label{gap:4px}
+ .inventory-voucher .inventory-type-options{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px}
+ .inventory-voucher .inventory-type-options label{font-size:13px;white-space:normal}
+ .inventory-voucher .business-entry-grid :is(input,select){height:36px;min-height:36px;padding:6px;font-size:16px}
+ .inventory-voucher .inventory-type-options input{height:15px;min-height:15px;padding:0}
+ .inventory-voucher .business-form-help{font-size:11px}
+}
+@media(max-width:360px) and (max-height:680px){
+ #modal:has(>.inventory-voucher){padding:12px}
+ .inventory-voucher h3{font-size:18px;margin-bottom:8px}
+ .inventory-voucher .business-entry-grid{gap:8px}
+ .inventory-voucher .inventory-type-options{gap:6px;padding:8px}
+ .inventory-voucher .business-entry-grid textarea{min-height:44px;height:44px}
+ .inventory-voucher .business-form-help{margin:6px 0}
+ .inventory-voucher .dialogfoot{margin-top:8px}
+}
