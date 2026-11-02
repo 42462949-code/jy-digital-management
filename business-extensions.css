@@ -237,3 +237,13 @@
 .access-department-choices button:hover,.access-department-choices button:focus-visible{background:#eaf3ff}
 .access-department-choices p{margin:4px;font-size:12px}
 @media(max-width:800px){.access-user-desktop .access-user-layout{grid-template-columns:190px minmax(0,1fr);gap:10px}.access-user-desktop .access-user-profile{padding-right:8px}}
+
+/* Reduce only the right desktop pane by one third; retain the profile column. */
+#modal:has(>.access-user-desktop){--access-profile-and-frame:278px;--access-previous-width:min(1080px,calc(100vw - 24px));width:calc(var(--access-profile-and-frame) + (var(--access-previous-width) - var(--access-profile-and-frame)) * .666666667)}
+#modal>.access-user-desktop{height:min(822.4px,calc(100dvh - 56px))}
+.access-user-desktop .access-permission-table tbody td:first-child{text-align:center!important}
+.access-user-desktop .access-permission-table th{position:sticky}
+.access-column-resizer{position:absolute;right:-1px;top:0;bottom:0;width:8px;cursor:col-resize;touch-action:none;z-index:3}
+.access-column-resizer:hover,.access-column-resizer:focus-visible{background:#2365c633;outline:1px solid #2365c6;outline-offset:-1px}
+body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!important;user-select:none!important}
+@media(max-width:800px){#modal:has(>.access-user-desktop){--access-profile-and-frame:232px}}
