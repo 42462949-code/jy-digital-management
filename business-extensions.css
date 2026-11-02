@@ -262,3 +262,13 @@ body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!impo
 /* Whole-user permission editing keeps the profile visible and read-only. */
 .access-user-edit .business-entry-grid input:disabled{opacity:1;color:#526a80;background:#f2f6fb;cursor:default}
 .access-user-edit #accessUpdateTemplate:disabled,.access-user-edit .access-department-toggle:disabled{cursor:default;opacity:.55}
+
+/* Batch grants belong to the desktop new-user dialog only. */
+.access-user-batch .access-user-profile{display:flex;flex-direction:column;overflow:hidden}
+.access-user-batch .access-user-profile-fields{flex:1;min-height:0;overflow-y:auto}
+.access-user-batch .access-batch-actions{flex-shrink:0;display:grid;grid-template-columns:1fr 1fr;gap:7px;padding-top:12px;margin-top:8px;border-top:1px solid #d9e4ef}
+.access-user-batch .access-batch-actions p{grid-column:1/-1;margin:0;font-size:11px;color:#557491}
+.access-user-batch .access-batch-actions button{height:32px;min-height:32px;padding:4px 8px;font-size:13px}
+.access-user-batch .access-batch-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;height:25px;font-size:11px;line-height:11px}
+.access-user-batch .access-batch-head input,.access-user-batch .access-row-check{width:13px;height:13px;min-height:13px;margin:0;padding:0;vertical-align:middle;accent-color:#2365c6}
+.access-user-batch .access-permission-table tbody td:nth-child(2){text-align:center!important}
