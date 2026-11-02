@@ -955,3 +955,11 @@ html.phone-device .workspace .sales-order-options input[type="checkbox"]:checked
 .factory-turn-page>img{display:block;width:100%;height:100%;object-fit:contain}
 .factory-turn-page::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#142f4918,transparent 18%,transparent 75%,#142f4926);pointer-events:none}
 .factory-photo-frame>.factory-caption{z-index:2}
+
+/* Keep the tab row in place; extend only the selected tab down to the separator. */
+body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs{align-items:flex-start}
+body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs button{margin-top:1px}
+body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs button.active{height:31px;min-height:31px}
+body:not(.mobile-scan) .workspace:not(.management-home-page) .topbar .workspace-controls{align-self:flex-start;margin-top:1px}
+body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs{scrollbar-width:none}
+body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs::-webkit-scrollbar{display:none}
