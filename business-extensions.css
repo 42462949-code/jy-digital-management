@@ -258,3 +258,7 @@ body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!impo
 .access-user-desktop .access-permission-scroll{overflow-x:hidden;overflow-y:auto}
 .access-user-desktop .access-permission-table{width:100%;max-width:100%;min-width:0}
 .access-user-desktop .access-column-resizer{right:0}
+
+/* Whole-user permission editing keeps the profile visible and read-only. */
+.access-user-edit .business-entry-grid input:disabled{opacity:1;color:#526a80;background:#f2f6fb;cursor:default}
+.access-user-edit #accessUpdateTemplate:disabled,.access-user-edit .access-department-toggle:disabled{cursor:default;opacity:.55}

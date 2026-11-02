@@ -1225,3 +1225,55 @@ def test_checklist_update_validates_and_does_not_change_existing_grants(setup):
         assert admin.get('/api/access/template').json()['rows']==update
     with store.connect() as con:
         assert not con.execute('SELECT 1 FROM jy_records WHERE table_id=14').fetchone()
+
+
+def test_permissions_only_updates_changed_grants_without_touching_accounts(setup):
+    app,admin,store=setup
+    payload={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','原部门','','权限用户甲','A-only-158' if i==0 else '','原岗位','销售订单列表',node,'允许','备注'+str(i)]} for i,node in enumerate(['表标签可看','订单关闭'])]+[{'id':str(uuid.uuid4()),'version':0,'values':['','乙部门','','权限用户乙','B-only-158','','销售订单列表','表标签可看','允许','乙备注']}]}
+    created=admin.post('/api/access/rows',json=payload);assert created.status_code==200,created.text
+    records=created.json()['records']
+    with store.connect(write=True) as con:
+        con.execute("UPDATE jy_users SET enabled=false WHERE username='权限用户甲'")
+        account_before=con.execute("SELECT * FROM jy_users WHERE username='权限用户甲'").fetchone()
+    changes=[]
+    for row in records[:2]:
+        values=row['values'].copy();values[8]='不允许'
+        changes.append({'id':row['id'],'version':row['version'],'values':values})
+    update={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':changes}
+    result=admin.post('/api/access/rows',json=update);assert result.status_code==200,result.text
+    assert len(result.json()['records'])==2
+    for before,after in zip(records[:2],result.json()['records']):
+        assert [i for i,(a,b) in enumerate(zip(before['values'],after['values'])) if a!=b]==[8]
+        assert after['version']==before['version']+1
+        assert after['meta']==before['meta']
+    assert admin.post('/api/access/rows',json=update).json()==result.json()
+    with store.connect() as con:
+        assert con.execute("SELECT * FROM jy_users WHERE username='权限用户甲'").fetchone()==account_before
+        other=con.execute('SELECT * FROM jy_records WHERE id=%s',(records[2]['id'],)).fetchone()
+        assert other['version']==records[2]['version'] and other['values_json']==records[2]['values']
+        assert con.execute("SELECT count(*) AS n FROM jy_audit WHERE action='access.permission.update'").fetchone()['n']==2
+    same=result.json()['records'][0]
+    unchanged=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':[{'id':same['id'],'version':same['version'],'values':same['values']}]})
+    assert unchanged.status_code==200 and unchanged.json()['records'][0]['version']==same['version']
+    with TestClient(app) as ordinary:
+        login(ordinary,'权限用户乙','B-only-158')
+        assert ordinary.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':changes}).status_code==403
+
+
+def test_permissions_only_rejects_readonly_field_changes_and_rolls_back_batch(setup):
+    app,admin,store=setup
+    entries=[{'id':str(uuid.uuid4()),'version':0,'values':['','原部门','','只改权限','Only-grants-158' if i==0 else '','原岗位','销售订单列表',node,'允许','备注']} for i,node in enumerate(['表标签可看','订单关闭'])]
+    created=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':entries}).json()['records']
+    import copy
+    for field in [0,1,2,3,4,5,6,7,9]:
+        changes=[{'id':r['id'],'version':r['version'],'values':r['values'].copy()} for r in created]
+        changes[0]['values'][8]='不允许';changes[1]['values'][field]='被篡改'
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':changes})
+        assert response.status_code==400,response.text
+        with store.connect() as con:
+            for r in created:
+                current=con.execute('SELECT * FROM jy_records WHERE id=%s',(r['id'],)).fetchone()
+                assert current['values_json']==r['values'] and current['version']==r['version']
+    for change in [{'id':created[0]['id'],'version':created[0]['version'],'delete':True},{'id':str(uuid.uuid4()),'version':0,'values':created[0]['values']},{'id':created[0]['id'],'version':999,'values':created[0]['values']}]:
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':[change]})
+        assert response.status_code in [400,409],response.text

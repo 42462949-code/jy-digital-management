@@ -110,9 +110,10 @@ def register_access_workflows(app,store):
             for entry in changes:
                 identifier=uid(entry.get('id'))
                 if identifier in seen:fail(400,'权限记录重复')
-                seen.add(identifier);old=con.execute('SELECT * FROM jy_records WHERE id=%s',(identifier,)).fetchone()
+                seen.add(identifier);old=con.execute('SELECT * FROM jy_records WHERE id=%s'+(' FOR UPDATE' if data.get('permissionsOnly') else ''),(identifier,)).fetchone()
                 if old and old['table_id']!=14:fail(403,'记录不属于用户与权限表')
                 if old and old['version']!=entry.get('version') or not old and entry.get('version') not in [0,None]:fail(409,'用户权限记录已变化，请重新载入')
+                if data.get('permissionsOnly') and (entry.get('delete') or not old):fail(400,'权限修改只能更新已有记录的权限')
                 if entry.get('delete'):
                     if not old:fail(409,'权限记录不存在')
                     affected.add(old['values_json'][3]);con.execute('DELETE FROM jy_records WHERE id=%s',(identifier,));output.append({'id':identifier,'table':14,'deleted':True});audit(con,actor,'access.delete',14,identifier,before=public_record(old));continue
@@ -121,6 +122,13 @@ def register_access_workflows(app,store):
                 values=[str(v) for v in values];name=values[3].strip();table=values[6];node=values[7];permission=values[8];password=values[4]
                 if not name or len(name)>80 or table not in [v['name'] for k,v in CATALOG.items() if k!='3'] or node not in NODES or permission not in ['允许','不允许']:fail(400,'请填写有效姓名、表名、控制节点和权限')
                 if old and name!=old['values_json'][3]:fail(400,'已有权限记录的登录账号不能改名，请新增账号')
+                if data.get('permissionsOnly'):
+                    if any(values[i]!=old['values_json'][i] for i in range(10) if i!=8):fail(400,'此窗口只能修改权限列')
+                    updated=old['values_json'].copy();updated[8]=permission
+                    if updated!=old['values_json']:
+                        con.execute('UPDATE jy_records SET values_json=%s,version=version+1,updated_at=now() WHERE id=%s',(Jsonb(updated),identifier))
+                        audit(con,actor,'access.permission.update',14,identifier,before={'permission':old['values_json'][8]},after={'permission':permission})
+                    output.append(public_record(record_by_id(con,identifier,14)));continue
                 values[3]=name
                 team=None
                 if values[2]:
