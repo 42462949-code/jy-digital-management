@@ -1277,3 +1277,46 @@ def test_permissions_only_rejects_readonly_field_changes_and_rolls_back_batch(se
     for change in [{'id':created[0]['id'],'version':created[0]['version'],'delete':True},{'id':str(uuid.uuid4()),'version':0,'values':created[0]['values']},{'id':created[0]['id'],'version':999,'values':created[0]['values']}]:
         response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'permissionsOnly':True,'changes':[change]})
         assert response.status_code in [400,409],response.text
+
+
+def test_production_report_draft_edits_commit_and_consume_only_retained_sources(setup):
+    app,admin,store=setup
+    create(admin,9,['1','贴合','DRAFT-A','','','']);create(admin,9,['2','泡棉','DRAFT-B','','',''])
+    a=create(admin,1,['2026-11-01','DRAFT-A','客户','SO-A','PO-A','产品','MAT','58','20','0','Y','备注','DRAFT-ID-A','贴合','MO-A'],information='5')
+    b=create(admin,1,['2026-11-01','DRAFT-B','客户','SO-B','PO-B','产品','MAT','58','20','0','Y','备注','DRAFT-ID-B','泡棉','MO-B'],information='4')
+    payload={'requestId':str(uuid.uuid4()),'draft':True,'records':[{'id':a['id'],'version':a['version'],'information':'5','date':'2026-10-30','department':'泡棉','equipment':'自由录入设备','quantity':'7','values':['恶意替换客户']}]}
+    response=admin.post('/api/work-orders/generate-reports',json=payload);assert response.status_code==200,response.text
+    report=admin.get('/api/tables/2').json()['records'][0]
+    assert [report['values'][i] for i in [0,1,3,4,5,6,12,16,17]]==['2026-10-30','客户','PO-A','自由录入设备','7','Y','DRAFT-ID-A','泡棉','MO-A']
+    sources={r['id']:r for r in admin.get('/api/tables/1').json()['records']}
+    assert sources[a['id']]['information']=='' and sources[a['id']]['values'][9]=='7'
+    assert sources[b['id']]['information']=='4' and sources[b['id']]['values'][9]=='0' and sources[b['id']]['version']==1
+    assert admin.post('/api/work-orders/generate-reports',json=payload).json()==response.json()
+    assert len(admin.get('/api/tables/2').json()['records'])==1
+
+
+def test_production_report_draft_invalid_rows_rollback_reports_and_information(setup):
+    import copy
+    app,admin,store=setup
+    create(admin,9,['1','贴合','DRAFT-VALID','','',''])
+    works=[create(admin,1,['2026-11-01','DRAFT-VALID','客户','SO','PO','产品','MAT','58','20','0','Y','','DRAFT-'+str(i),'贴合','MO-'+str(i)],information='5') for i in range(2)]
+    base=[{'id':r['id'],'version':r['version'],'information':'5','date':'2026-10-31','department':'贴合','equipment':'DRAFT-VALID','quantity':'7'} for r in works]
+    for field,value in [('date','2026-02-31'),('quantity','0'),('quantity','no'),('department',''),('equipment',''),('information','8'),('version',999)]:
+        records=copy.deepcopy(base);records[1][field]=value
+        response=admin.post('/api/work-orders/generate-reports',json={'requestId':str(uuid.uuid4()),'draft':True,'records':records})
+        assert response.status_code in [400,409],response.text
+        assert not admin.get('/api/tables/2').json()['records']
+        assert all(r['information']=='5' and r['values'][9]=='0' and r['version']==1 for r in admin.get('/api/tables/1').json()['records'])
+
+
+def test_production_report_draft_cannot_reassign_unallocated_team(setup):
+    app,admin,store=setup
+    a=create(admin,9,['1','贴合','DRAFT-SCOPE-A','','','']);b=create(admin,9,['2','泡棉','DRAFT-SCOPE-B','','',''])
+    work=create(admin,1,['2026-11-01','DRAFT-SCOPE-A','客户','SO','PO','产品','MAT','58','20','0','Y','','DRAFT-SCOPE','贴合','MO'],information='5')
+    role=admin.post('/api/admin/roles',json={'name':'草稿报工','permissions':{'1':{'scope':'teams','actions':['view','generate_report']},'2':{'scope':'teams','actions':['view']}}}).json();rid=role.get('id') or role['role']['id'];user(admin,'draft-worker',[rid],[a['id']])
+    with TestClient(app) as worker:
+        login(worker,'draft-worker',change=True)
+        record={'id':work['id'],'version':1,'information':'5','date':'2026-10-31','department':'泡棉','equipment':'DRAFT-SCOPE-B','quantity':'3'}
+        assert worker.post('/api/work-orders/generate-reports',json={'requestId':str(uuid.uuid4()),'draft':True,'records':[record]}).status_code==403
+        record.update(department='贴合',equipment='DRAFT-SCOPE-A')
+        ok=worker.post('/api/work-orders/generate-reports',json={'requestId':str(uuid.uuid4()),'draft':True,'records':[record]});assert ok.status_code==200,ok.text

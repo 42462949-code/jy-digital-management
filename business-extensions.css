@@ -272,3 +272,22 @@ body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!impo
 .access-user-batch .access-batch-head{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;height:25px;font-size:11px;line-height:11px}
 .access-user-batch .access-batch-head input,.access-user-batch .access-row-check{width:13px;height:13px;min-height:13px;margin:0;padding:0;vertical-align:middle;accent-color:#2365c6}
 .access-user-batch .access-permission-table tbody td:nth-child(2){text-align:center!important}
+
+/* Landscape production report preview: only four report fields are editable. */
+#modal:has(>.production-report-draft){width:min(1120px,calc(100vw - 24px));max-width:calc(100vw - 24px);padding:16px;overflow:hidden}
+.production-report-draft{display:flex;flex-direction:column;height:min(430px,calc(100dvh - 64px));min-height:0}
+.production-draft-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0}
+.production-draft-heading h3{margin:0;font-size:20px}.production-draft-actions{display:flex;gap:8px}.production-draft-actions button{height:32px;min-height:32px;padding:5px 14px}
+.production-draft-help{font-size:12px;color:#647e97;margin:10px 0;flex-shrink:0}
+.production-draft-scroll{overflow:auto;flex:1;min-height:0;border:1px solid #548dd4}
+#productionDraftTable{table-layout:fixed;border-collapse:collapse;font:10pt 'Microsoft YaHei','微软雅黑',sans-serif}
+#productionDraftTable th{position:sticky;top:0;z-index:1;height:26px;padding:0;background:#548dd4;color:white;border:1px solid white;font-weight:400;line-height:12px}
+#productionDraftTable td{height:29.25px;padding:0;border:1px solid #548dd4;line-height:18px;white-space:normal;overflow-wrap:anywhere;vertical-align:middle}
+#productionDraftTable td .celltext{white-space:pre-wrap;padding:0 3px}
+#productionDraftTable td input:not([type=checkbox]){width:100%;min-width:0;height:26px;min-height:26px;padding:2px 4px;border:1px solid transparent;border-radius:0;background:#f4f9ff;font:inherit}
+#productionDraftTable td input:not([type=checkbox]):focus{border-color:#2365c6;background:white;outline:none}
+#productionDraftTable input[type=checkbox]{width:13px;min-width:13px;height:13px;min-height:13px;margin:0;vertical-align:middle}
+#productionDraftTable th:first-child,#productionDraftTable td:first-child{text-align:center}
+.production-draft-resizer{position:absolute;right:0;top:0;bottom:0;width:7px;cursor:col-resize;touch-action:none}
+.production-draft-resizer:hover,.production-draft-resizer:focus-visible{background:#ffffff55;outline:1px solid white}
+#productionDraftError{margin-top:8px;flex-shrink:0}#productionDraftError:empty{display:none}

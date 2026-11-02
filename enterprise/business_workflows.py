@@ -24,17 +24,20 @@ def generate_work_reports(con,user,data):
         if not isinstance(item,dict):fail(400,'工单参数无效')
         row=record_by_id(con,item.get('id'),1);require(con,user,1,'generate_report',row)
         if str(row['id']) in seen:fail(400,'工单重复')
+        row=con.execute('SELECT * FROM jy_records WHERE id=%s FOR UPDATE',(row['id'],)).fetchone()
         seen.add(str(row['id']));sources.append((row,item))
     prior=con.execute('SELECT * FROM jy_requests WHERE id=%s',(request_id,)).fetchone()
     if prior:
         if str(prior['actor_id'])!=str(user['id']) or prior['signature']!=signature:fail(409,'请求标识已使用')
         return prior['response_json']
-    try:production_date=date(data.get('date',''))
-    except ValueError as error:fail(400,str(error))
-    department=data.get('department');team_id=uid(data.get('teamId'))
-    team=record_by_id(con,team_id,9)
-    if department not in ['贴合','泡棉'] or str(team['values_json'][1]).strip()!=department:fail(400,'部门与生产班组不对应')
-    if 'all' not in scopes(con,user,1,'generate_report') and team_id not in user['team_ids']:fail(403,'不能向未分配的班组报工')
+    is_draft=data.get('draft') is True
+    if not is_draft:
+        try:production_date=date(data.get('date',''))
+        except ValueError as error:fail(400,str(error))
+        department=data.get('department');team_id=uid(data.get('teamId'))
+        team=record_by_id(con,team_id,9)
+        if department not in ['贴合','泡棉'] or str(team['values_json'][1]).strip()!=department:fail(400,'部门与生产班组不对应')
+        if 'all' not in scopes(con,user,1,'generate_report') and team_id not in user['team_ids']:fail(403,'不能向未分配的班组报工')
     output=[];ids=[]
     for row,item in sources:
         if item.get('version')!=row['version']:fail(409,'工单已变化，请重新载入')
@@ -46,9 +49,25 @@ def generate_work_reports(con,user,data):
             if quantity<=0:raise ValueError()
         except ValueError:fail(400,'请在“信息录入”列填写一个大于0的生产数量')
         if work_state(row['values_json'],row['meta'].get('workStatus'))['workStatus']=='关闭':fail(409,'已关闭工单不能下推生产报表')
-        v=row['values_json'];values=[production_date,v[2],v[5],v[8],team['values_json'][2],text(quantity),v[10],'','','','',v[11],v[12],stamp(),'','',department,v[14],'','']
+        v=row['values_json']
+        if is_draft:
+            try:
+                production_date=date(item.get('date',''));quantity=decimal(item.get('quantity',''))
+                if quantity<=0:raise ValueError()
+            except (ValueError,TypeError):fail(400,'请填写有效日期及大于0的生产数量')
+            if any(not isinstance(item.get(k),str) or not item[k].strip() or len(item[k])>16384 for k in ['department','equipment']):fail(400,'请填写部门和设备')
+            department=item['department'].strip();equipment=item['equipment'].strip()
+            matches=con.execute('SELECT * FROM jy_records WHERE table_id=9 AND btrim(values_json->>2)=%s AND btrim(values_json->>1)=%s',(equipment,department)).fetchall()
+            if len(matches)>1:fail(400,'部门与设备的基础资料存在重复')
+            team_id=str(matches[0]['id']) if matches else row['team_id'] if department==v[13] else None
+            if 'all' not in scopes(con,user,1,'generate_report') and (not matches or team_id not in user['team_ids']):fail(403,'不能向未分配的部门或设备报工')
+        else:equipment=team['values_json'][2]
+        values=[production_date,v[2],v[5],v[4],equipment,text(quantity),v[10],'','','','',v[11],v[12],stamp(),'','',department,v[14],'','',v[7],'']
         values,meta=apply_price(con,values,{'sourceWorkId':str(row['id'])},row)
         report=insert_record(con,user,2,values,meta=meta,team_id=team_id,action='work.generate_report');ids.append(str(report['id']))
+        if is_draft:
+            con.execute('UPDATE jy_records SET department=%s WHERE id=%s',(department,report['id']))
+            report=record_by_id(con,report['id'],2)
         updated=v.copy()
         with localcontext() as context:
             context.prec=150;updated[9]=text(decimal(v[9],True)+quantity)
