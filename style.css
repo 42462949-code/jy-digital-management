@@ -948,3 +948,10 @@ html.phone-device .workspace .sales-order-options input[type="checkbox"]:checked
 /* Keep module numbers intact beside longer Vietnamese headings on narrow phones. */
 .management-home-overview .management-guide-number{white-space:nowrap;flex-shrink:0}
 .management-home-overview .management-guide-card-heading h3{min-width:0}
+
+/* Factory gallery: keep the next photo underneath an outgoing book page. */
+.factory-photo-frame{perspective:1400px}
+.factory-photo-frame>.factory-turn-page{position:absolute;inset:0;z-index:1;transform-origin:left center;backface-visibility:hidden;pointer-events:none;background:#e8f1f4;box-shadow:12px 0 24px #142f4933;will-change:transform,filter}
+.factory-turn-page>img{display:block;width:100%;height:100%;object-fit:contain}
+.factory-turn-page::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#142f4918,transparent 18%,transparent 75%,#142f4926);pointer-events:none}
+.factory-photo-frame>.factory-caption{z-index:2}
