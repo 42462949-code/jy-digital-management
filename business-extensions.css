@@ -107,3 +107,30 @@
  .inventory-voucher .business-form-help{margin:6px 0}
  .inventory-voucher .dialogfoot{margin-top:8px}
 }
+
+/* Keep account permissions within one responsive dialog. */
+#modal:has(>.access-editor){width:min(760px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:20px}
+#modal>.access-editor{width:100%;max-width:100%;min-width:0}
+.access-editor .business-entry-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.access-editor .business-entry-grid>label{min-width:0}
+.access-editor .business-entry-grid :is(input,select,textarea){max-width:100%;min-width:0}
+.access-editor .business-entry-grid textarea{min-height:56px;font:inherit;resize:vertical}
+.access-editor .business-form-help{line-height:1.5;margin:10px 0;overflow-wrap:anywhere}
+.access-editor .error:empty{display:none}
+.access-editor .dialogfoot{margin-top:12px}
+@media(max-width:700px){
+ #modal:has(>.access-editor){padding:16px}
+ .access-editor h3{font-size:19px;margin-bottom:12px}
+ .access-editor .business-entry-grid{gap:10px}
+ .access-editor .business-entry-grid>label{gap:4px}
+ .access-editor .business-entry-grid :is(input,select){height:36px;min-height:36px;padding:6px;font-size:16px}
+ .access-editor .business-form-help{font-size:11px}
+}
+@media(max-width:360px) and (max-height:680px){
+ #modal:has(>.access-editor){padding:12px}
+ .access-editor h3{font-size:18px;margin-bottom:8px}
+ .access-editor .business-entry-grid{gap:8px}
+ .access-editor .business-entry-grid textarea{min-height:44px;height:44px}
+ .access-editor .business-form-help{margin:6px 0}
+ .access-editor .dialogfoot{margin-top:8px}
+}
