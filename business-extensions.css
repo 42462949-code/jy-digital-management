@@ -139,3 +139,30 @@
 .workspace #grid tbody tr[data-row],.workspace #grid tbody tr[data-row]>td{height:29.25px}
 .workspace #grid .scan-review-status{height:22.5px;padding-block:0}
 .workspace.hourly-output-page .hourly-table tbody :is(th,td){height:18px;padding-block:0;line-height:14px}
+
+
+/* Attendance entry stays within the screen, including its footer actions. */
+#modal:has(>.attendance-editor){width:min(760px,calc(100vw - 24px));max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);padding:20px}
+#modal>.attendance-editor{width:100%;max-width:100%;min-width:0}
+.attendance-editor .business-entry-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.attendance-editor .business-entry-grid>label{min-width:0}
+.attendance-editor .business-entry-grid :is(input,select){max-width:100%;min-width:0}
+.attendance-editor .business-form-help{line-height:1.5;margin:10px 0;overflow-wrap:anywhere}
+.attendance-editor .error:empty{display:none}
+.attendance-editor .dialogfoot{margin-top:12px}
+@media(max-width:700px){
+ #modal:has(>.attendance-editor){padding:16px}
+ .attendance-editor h3{font-size:19px;margin-bottom:12px}
+ .attendance-editor .business-entry-grid{gap:10px}
+ .attendance-editor .business-entry-grid>label{gap:4px}
+ .attendance-editor .business-entry-grid :is(input,select){height:36px;min-height:36px;padding:6px;font-size:16px}
+ .attendance-editor .business-form-help{font-size:11px}
+}
+@media(max-height:500px) and (min-width:600px){
+ #modal:has(>.attendance-editor){padding:12px 16px}
+ .attendance-editor h3{font-size:18px;margin-bottom:10px}
+ .attendance-editor .business-entry-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ .attendance-editor .business-form-help{margin:8px 0}
+ .attendance-editor .dialogfoot{margin-top:8px}
+ .attendance-editor .dialogfoot button{min-height:32px;padding-block:6px}
+}
