@@ -282,7 +282,7 @@ def create_app(config=None):
         data = await body(request)
         username = text(data.get('username'), '账号', 100)
         password = data.get('password')
-        if not isinstance(password, str) or len(password) > 128:
+        if not isinstance(password, str):
             fail(401, '用户名或密码不正确')
         fingerprint = token_hash((request.client.host if request.client else '') + ':' + username)
         with store.connect(write=True) as con:

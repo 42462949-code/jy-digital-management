@@ -819,7 +819,7 @@ def test_account_table_enforces_actual_node_permissions_and_never_returns_passwo
         response=admin.post('/api/access/rows',json=payload);assert response.status_code==200,response.text
         assert secret not in response.text
         return response.json()['records'][0]
-    grant=access('全部操作',password=secret);deny=access('修改','禁止')
+    grant=access('全部操作',password=secret);deny=access('修改','不允许')
     assert grant['values'][4]=='••••••'
     with store.connect() as con:
         account=con.execute("SELECT * FROM jy_users WHERE username='node-user'").fetchone()
@@ -890,7 +890,7 @@ def test_explicit_node_deny_overrides_existing_role_immediately(setup):
     with TestClient(app) as reader:
         login(reader,'old-role-user',change=True)
         assert reader.get('/api/tables/0').status_code==200
-        payload={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','old-role-user','','文员','销售订单列表','查看','禁止','']}]} 
+        payload={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','old-role-user','','文员','销售订单列表','查看','不允许','']}]} 
         result=admin.post('/api/access/rows',json=payload);assert result.status_code==200,result.text
         assert reader.get('/api/tables/0').status_code==403
         assert reader.get('/api/tables/14').status_code==403
@@ -932,7 +932,7 @@ def test_access_password_retry_never_accepts_changed_secret_or_clears_profile(se
     assert admin.post('/api/access/rows',json=payload).json()==response.json()
     changed=json.loads(json.dumps(payload));changed['changes'][0]['values'][4]='Different-retry-130'
     assert admin.post('/api/access/rows',json=changed).status_code==409
-    extra=['','','','retry-user','','文员','即时库存','修改','禁止','']
+    extra=['','','','retry-user','','文员','即时库存','修改','不允许','']
     assert admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':extra}]}).status_code==200
     with store.connect() as con:
         account=con.execute("SELECT * FROM jy_users WHERE username='retry-user'").fetchone()
@@ -949,3 +949,45 @@ def test_inventory_voucher_appends_after_existing_ledger_and_preserves_batch_ord
     assert [r['id'] for r in rows]==[prior['id'],*response.json()['ids']]
     assert [r['values'][6] for r in rows]==['旧物料','物料1','物料2']
     assert [r['id'] for r in admin.get('/api/tables/13').json()['records']]==[r['id'] for r in rows]
+
+
+def test_access_accepts_short_empty_long_passwords_and_disallow_permissions(setup):
+    app,admin,store=setup
+    for name,password in [('short-access','123'),('empty-access',''),('long-access','x'*256)]:
+        rid=str(uuid.uuid4());values=['','','',name,password,'文员','即时库存','查看','允许','']
+        payload={'requestId':str(uuid.uuid4()),'changes':[{'id':rid,'version':0,'values':values}]}
+        response=admin.post('/api/access/rows',json=payload);assert response.status_code==200,response.text
+        grant=response.json()['records'][0];assert grant['values'][4]=='••••••'
+        assert admin.post('/api/access/rows',json=payload).json()==response.json()
+        with TestClient(app) as member:
+            login(member,name,password)
+            assert member.get('/api/auth/me').json()['user']['must_change_password'] is False
+            assert member.get('/api/tables/12').status_code==200
+        # Blank on an existing record preserves its current password.
+        modified=grant['values'].copy();modified[4]='';modified[9]='保留密码'
+        saved=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':rid,'version':grant['version'],'values':modified}]})
+        assert saved.status_code==200,saved.text
+        with TestClient(app) as member:login(member,name,password)
+    deny=['','','','short-access','','文员','即时库存','修改','不允许','']
+    response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':deny}]})
+    assert response.status_code==200,response.text
+    with TestClient(app) as member:
+        login(member,'short-access','123')
+        assert member.get('/api/auth/me').json()['user']['permissions']['12']['update']==[]
+    deny[8]='禁止'
+    assert admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':deny}]}).status_code==400
+
+
+def test_access_legacy_denial_migrates_once_and_still_denies(setup):
+    from psycopg.types.json import Jsonb
+    app,admin,store=setup
+    response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','','legacy-denial','','文员','即时库存','查看','不允许','']}]})
+    assert response.status_code==200,response.text
+    record=response.json()['records'][0];legacy=record['values'].copy();legacy[8]='禁止'
+    with store.connect(write=True) as con:con.execute('UPDATE jy_records SET values_json=%s WHERE id=%s',(Jsonb(legacy),record['id']))
+    store.initialize();store.initialize()
+    row=next(r for r in admin.get('/api/tables/14').json()['records'] if r['id']==record['id'])
+    assert row['values'][8]=='不允许' and row['version']==record['version']+1
+    with TestClient(app) as member:
+        login(member,'legacy-denial','')
+        assert member.get('/api/tables/12').status_code==403

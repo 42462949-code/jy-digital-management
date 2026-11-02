@@ -95,6 +95,7 @@ class Store:
     def initialize(self):
         with self.connect(write=True) as con:
             con.execute(SCHEMA)
+            con.execute("UPDATE jy_records SET values_json=jsonb_set(values_json,'{8}','\"不允许\"'::jsonb),version=version+1 WHERE table_id=14 AND values_json->>8='禁止'")
             prices=con.execute('SELECT * FROM jy_records WHERE table_id=10 ORDER BY created_at,id').fetchall()
             maximum=max([int(r['values_json'][0]) for r in prices if str(r['values_json'][0]).isdigit()]+[0])
             if maximum:con.execute("SELECT setval('jy_price_row_no',GREATEST(%s,(SELECT last_value FROM jy_price_row_no)),true)",(maximum,))
