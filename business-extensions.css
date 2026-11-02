@@ -169,3 +169,38 @@
 
 /* Keep the inventory drill-down tool aligned with the other toolbar icons. */
 .workspace .inventory-duplicate-tools>.inventory-ledger-drilldown{width:36px;min-width:36px;height:24px;min-height:24px;padding:3px 7px;gap:0;flex:0 0 36px;box-shadow:none!important}
+
+/* New users receive the complete administrator checklist in one dialog. */
+#modal:has(>.access-user-editor){width:min(1040px,calc(100vw - 24px));overflow:hidden}
+.access-user-editor #accessForm{display:flex;flex-direction:column;max-height:calc(100dvh - 118px);min-height:0}
+.access-user-editor .business-entry-grid{grid-template-columns:repeat(3,minmax(0,1fr));flex-shrink:0}
+.access-template-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-shrink:0}
+.access-template-heading button{font-size:12px;white-space:nowrap}
+.access-permission-scroll{overflow:auto;min-height:100px;max-height:48vh;border:1px solid #c9daef;border-radius:7px}
+.access-permission-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:13px}
+.access-permission-table th,.access-permission-table td{border-bottom:1px solid #d7e3f2;padding:7px;text-align:left;overflow-wrap:anywhere}
+.access-permission-table th{position:sticky;top:0;background:#eaf3ff;z-index:1}
+.access-permission-table th:first-child{width:48px}.access-permission-table th:last-child{width:125px}
+.access-permission-table select{width:100%;min-width:0;min-height:32px;font-size:13px;padding:4px}
+.access-user-editor .dialogfoot{flex-shrink:0}
+@media(max-width:700px){
+ .access-user-editor .business-entry-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .access-permission-table{font-size:12px}.access-permission-table th,.access-permission-table td{padding:5px}
+ .access-permission-table th:first-child{width:32px}.access-permission-table th:last-child{width:92px}
+ .access-template-heading{font-size:13px}.access-template-heading button{padding:6px;font-size:11px}
+ .access-user-editor #accessForm{max-height:calc(100dvh - 108px)}
+}
+.access-permission-table th,.access-permission-table td{white-space:normal;overflow:visible;text-overflow:clip;word-break:break-word}
+@media(max-width:700px){.access-user-editor #accessForm{max-height:calc(100dvh - 128px)}.access-user-editor .access-permission-scroll{min-height:72px}}
+
+.access-user-editor #accessCopyStatus:empty{display:none}
+.access-user-editor #accessCopyStatus{color:#315e8a;flex-shrink:0}
+@media(max-width:700px) and (max-height:680px){
+ .access-user-editor .business-entry-grid{gap:6px}
+ .access-user-editor .business-entry-grid>label{font-size:11px;gap:3px}
+ .access-user-editor .business-entry-grid :is(input,select){height:30px;min-height:30px;padding:4px;font-size:14px}
+ .access-user-editor .access-permission-scroll{min-height:56px}
+ .access-user-editor .business-form-help{font-size:10px;margin:5px 0}
+ .access-user-editor .access-template-heading{margin-top:8px;font-size:12px}
+ .access-user-editor .dialogfoot{margin-top:8px}
+}

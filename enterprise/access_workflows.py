@@ -1,5 +1,7 @@
 """Administrator-managed, write-only-password account/node permission rows."""
 import hashlib
+import json
+from pathlib import Path
 import uuid
 from fastapi import Request
 from psycopg.types.json import Jsonb
@@ -22,8 +24,42 @@ def explicit_scopes(con,user,table,action):
     return None
 
 
+DEFAULT_TEMPLATE=json.loads(Path(__file__).with_name('access_template.json').read_text())
+
+def permission_template(con):
+    row=con.execute("SELECT payload FROM jy_business_settings WHERE name='access-permission-template'").fetchone()
+    return row['payload'] if row else DEFAULT_TEMPLATE
+
+
 def register_access_workflows(app,store):
     from .api import current_user,administrator,body,fail,uid,record_by_id
+    def valid_template(rows):
+        if not isinstance(rows,list) or not 1<=len(rows)<=10000:fail(400,'权限清单数量无效')
+        seen=set();result=[]
+        for pair in rows:
+            if not isinstance(pair,list) or len(pair)!=2 or any(not isinstance(v,str) for v in pair):fail(400,'权限清单格式无效')
+            table,node=(v.strip() for v in pair)
+            if table not in [v['name'] for k,v in CATALOG.items() if k!='3'] or node not in NODES:fail(400,'清单表名或控制节点尚未接入系统')
+            if (table,node) in seen:fail(400,'权限清单表名和控制节点重复')
+            seen.add((table,node));result.append([table,node])
+        return result
+
+    @app.get('/api/access/template')
+    async def get_template(request:Request):
+        with store.connect() as con:
+            actor,_=current_user(request,con);administrator(con,actor)
+            return {'rows':permission_template(con)}
+
+    @app.post('/api/access/template')
+    async def update_template(request:Request):
+        data=await body(request)
+        with store.connect(write=True) as con:
+            actor,_=current_user(request,con);administrator(con,actor)
+            rows=valid_template(data.get('rows'))
+            con.execute("INSERT INTO jy_business_settings(name,payload) VALUES('access-permission-template',%s) ON CONFLICT(name) DO UPDATE SET payload=EXCLUDED.payload",(Jsonb(rows),))
+            audit(con,actor,'access.template.update',14,after={'items':len(rows)})
+            return {'rows':rows}
+
     @app.get('/api/access/passwords')
     async def visible_passwords(request:Request):
         from .password_vault import password_view_allowed,read_password
@@ -58,6 +94,18 @@ def register_access_workflows(app,store):
                     except Exception:fail(409,'此请求已处理且密码内容已变化，请重新打开窗口核对')
                 return prior['response_json']
             if not isinstance(changes,list) or not 1<=len(changes)<=10000:fail(400,'用户权限记录数量无效')
+            if data.get('newUser'):
+                template=permission_template(con)
+                if len(changes)!=len(template):fail(400,'新增用户必须填写完整权限清单')
+                values=[c.get('values') for c in changes if isinstance(c,dict)]
+                if len(values)!=len(changes) or any(not isinstance(v,list) or len(v)!=10 or any(not isinstance(x,str) for x in v) for v in values):fail(400,'新增用户字段无效')
+                first=values[0];name=first[3].strip()
+                if not name or not first[1].strip() or not first[4].strip() or first[4] in MASKS:fail(400,'用户姓名、密码、部门为必填项')
+                if [[v[6],v[7]] for v in values]!=template or any(v[8] not in ['允许','不允许'] or any(v[i]!=first[i] for i in [1,2,3,5]) or c.get('delete') or c.get('version') not in [None,0] for v,c in zip(values,changes)):fail(400,'请完整填写当前清单的每项权限')
+                if any(v[4] and v[4]!=first[4] for v in values[1:]):fail(400,'同一用户的密码不一致')
+                con.execute('SELECT pg_advisory_xact_lock(hashtext(%s))',('access-new-user:'+name,))
+                if con.execute('SELECT 1 FROM jy_users WHERE username=%s',(name,)).fetchone():fail(409,'该用户已存在，请使用修改功能')
+                if any(con.execute('SELECT 1 FROM jy_records WHERE id=%s',(uid(c.get('id')),)).fetchone() for c in changes):fail(409,'新增用户不能修改已有权限')
             output=[];seen=set();affected=set()
             for entry in changes:
                 identifier=uid(entry.get('id'))

@@ -1170,3 +1170,58 @@ def test_legacy_password_recovery_after_verified_login_and_empty_password_visibi
     with store.connect() as con:
         cipher=con.execute("SELECT password_cipher FROM jy_users WHERE username='legacy-vault'").fetchone()['password_cipher']
         assert read_password('different-name',cipher) is None
+
+
+def test_new_user_full_checklist_is_atomic_and_credentials_are_shared(setup):
+    app,admin,store=setup
+    template=admin.get('/api/access/template').json()['rows']
+    assert len(template)==78
+    changes=[{'id':str(uuid.uuid4()),'version':0,'values':['','测试部门','','batch-new','Batch-test-password' if i==0 else '','文员',table,node,'允许' if i==0 else '不允许','']} for i,(table,node) in enumerate(template)]
+    payload={'requestId':str(uuid.uuid4()),'newUser':True,'changes':changes}
+    result=admin.post('/api/access/rows',json=payload)
+    assert result.status_code==200,result.text
+    assert len(result.json()['records'])==78
+    assert all(r['values'][4]=='****' for r in result.json()['records'])
+    assert 'Batch-test-password' not in result.text
+    assert admin.post('/api/access/rows',json=payload).json()==result.json()
+    with TestClient(app) as reader:
+        login(reader,'batch-new','Batch-test-password')
+        assert reader.get('/api/tables/0').status_code==200
+        assert reader.get('/api/tables/4').status_code==403
+        assert reader.get('/api/access/template').status_code==403
+        assert reader.post('/api/access/template',json={'rows':template}).status_code==403
+    payload['requestId']=str(uuid.uuid4())
+    assert admin.post('/api/access/rows',json=payload).status_code==409
+
+
+def test_new_user_rejects_incomplete_required_fields_and_permissions(setup):
+    app,admin,store=setup
+    template=admin.get('/api/access/template').json()['rows']
+    base=[{'id':str(uuid.uuid4()),'version':0,'values':['','部门','','incomplete-new','pw' if i==0 else '','',''+table,node,'不允许','']} for i,(table,node) in enumerate(template)]
+    import copy
+    for issue in ['department','password','permission','missing','late-invalid']:
+        changes=copy.deepcopy(base)
+        if issue=='department':
+            for c in changes:c['values'][1]=''
+        elif issue=='password':changes[0]['values'][4]=''
+        elif issue=='permission':changes[-1]['values'][8]=''
+        elif issue=='missing':changes.pop()
+        else:changes[-1]['values'][7]='invalid'
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'newUser':True,'changes':changes})
+        assert response.status_code==400,response.text
+        with store.connect() as con:
+            assert not con.execute("SELECT 1 FROM jy_users WHERE username='incomplete-new'").fetchone()
+            assert not con.execute('SELECT 1 FROM jy_records WHERE table_id=14').fetchone()
+
+
+def test_checklist_update_validates_and_does_not_change_existing_grants(setup):
+    app,admin,store=setup
+    template=admin.get('/api/access/template').json()['rows']
+    update=template+[['考勤表','查看']]
+    assert admin.post('/api/access/template',json={'rows':update}).status_code==200
+    assert admin.get('/api/access/template').json()['rows']==update
+    for invalid in [[],update+[update[0]],update+[['不存在的表','查看']],update+[['考勤表','未实现节点']]]:
+        assert admin.post('/api/access/template',json={'rows':invalid}).status_code==400
+        assert admin.get('/api/access/template').json()['rows']==update
+    with store.connect() as con:
+        assert not con.execute('SELECT 1 FROM jy_records WHERE table_id=14').fetchone()
