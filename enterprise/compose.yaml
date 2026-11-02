@@ -23,6 +23,8 @@ services:
       JY_PUBLIC_ORIGIN: https://${JY_DOMAIN:?请设置域名}
       JY_BOOTSTRAP_USER: ${JY_BOOTSTRAP_USER:-admin}
       JY_BOOTSTRAP_PASSWORD: ${JY_BOOTSTRAP_PASSWORD:?请设置初始管理员密码}
+    volumes:
+      - password_keys:/home/jiayang/.local/share/jiayang
     depends_on:
       database:
         condition: service_healthy
@@ -47,6 +49,7 @@ services:
       app:
         condition: service_healthy
 volumes:
+  password_keys:
   database:
   certificates:
   caddy_config:

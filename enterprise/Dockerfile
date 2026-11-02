@@ -8,7 +8,7 @@ RUN --mount=type=secret,id=proxy_ca \
 COPY *.js *.css *.html *.svg *.webmanifest /app/
 COPY icons /app/icons
 COPY enterprise /app/enterprise
-RUN useradd --create-home --uid 10001 jiayang && chmod -R a+rX /app
+RUN useradd --create-home --uid 10001 jiayang && install -d -m 0700 -o 10001 -g 10001 /home/jiayang/.local/share/jiayang && chmod -R a+rX /app
 USER jiayang
 EXPOSE 8765
 CMD ["python", "-m", "enterprise", "serve"]

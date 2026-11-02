@@ -311,6 +311,8 @@ def create_app(config=None):
                 audit(con, {'username': username}, 'auth.failed')
                 # Return instead of raising so failed attempts are committed.
                 return JSONResponse({'error': '用户名或密码不正确'}, 401)
+            from .password_vault import seal_password
+            con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(username,password),user['id']))
             token, csrf = secrets.token_urlsafe(40), secrets.token_urlsafe(32)
             expires = dt.datetime.now(dt.timezone.utc) + dt.timedelta(hours=8)
             con.execute('DELETE FROM jy_sessions WHERE expires_at<now()')
@@ -358,7 +360,8 @@ def create_app(config=None):
                 fail(400, '原密码不正确')
             if data.get('oldPassword') == new:
                 fail(400, '新密码不能与原密码相同')
-            con.execute('UPDATE jy_users SET password_hash=%s,must_change_password=false,version=version+1 WHERE id=%s', (PASSWORDS.hash(new), user['id']))
+            from .password_vault import seal_password
+            con.execute('UPDATE jy_users SET password_hash=%s,password_cipher=%s,must_change_password=false,version=version+1 WHERE id=%s', (PASSWORDS.hash(new), seal_password(user['username'],new), user['id']))
             con.execute('DELETE FROM jy_sessions WHERE user_id=%s AND token_hash<>%s', (user['id'], session['token_hash']))
             audit(con, user, 'auth.password_changed')
         return {'ok': True}
@@ -412,6 +415,12 @@ def create_app(config=None):
             else:
                 con.execute('INSERT INTO jy_users(id,username,name,department,team_ids,role_ids,password_hash,enabled) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
                             (account_id, username, name, department, Jsonb(team_ids), Jsonb(role_ids), PASSWORDS.hash(password), enabled))
+            from .password_vault import seal_password
+            if not old or password:con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(username,password),account_id))
+            elif old['username']!=username:
+                from .password_vault import read_password
+                secret=read_password(old['username'],old.get('password_cipher'))
+                con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(username,secret) if secret is not None else None,account_id))
             ensure_last_admin(con)
             audit(con, actor, 'user.update' if old else 'user.create', record_id=account_id, before=before,
                   after={'username': username, 'name': name, 'enabled': enabled, 'roleIds': role_ids, 'teamIds': team_ids, 'passwordReset': bool(password)})

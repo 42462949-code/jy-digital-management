@@ -16,7 +16,7 @@ from argon2 import PasswordHasher
 CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text())
 ACTIONS = ['view', 'create', 'update', 'delete', 'import', 'export', 'label_print',
            'report_print', 'close_order', 'reopen_order', 'generate_work', 'generate_report',
-           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price','generate_inventory','financial_view']
+           'draft_edit', 'confirm_work', 'scan_submit', 'scan_correct', 'inventory_adjust','approve_price','unapprove_price','generate_inventory','financial_view','password_view']
 PASSWORDS = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=2)
 BUSINESS_TABLES = [0, 1, 2, 4, 8, 9, 10,12,13,14]
 TEAM_COLUMN = {1: 1, 2: 4, 4: 1, 8: 3}
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS jy_users (
  role_ids jsonb NOT NULL DEFAULT '[]', password_hash text NOT NULL, enabled boolean NOT NULL DEFAULT true,
  must_change_password boolean NOT NULL DEFAULT true, version integer NOT NULL DEFAULT 1,
  created_at timestamptz NOT NULL DEFAULT now(), last_login_at timestamptz);
+ALTER TABLE jy_users ADD COLUMN IF NOT EXISTS password_cipher text;
 CREATE TABLE IF NOT EXISTS jy_sessions (
  token_hash text PRIMARY KEY, user_id uuid NOT NULL REFERENCES jy_users(id),
  csrf text NOT NULL, expires_at timestamptz NOT NULL);
@@ -95,6 +96,7 @@ class Store:
     def initialize(self):
         with self.connect(write=True) as con:
             con.execute(SCHEMA)
+            con.execute("UPDATE jy_records SET values_json=jsonb_set(values_json,'{4}','\"****\"'::jsonb),version=version+1 WHERE table_id=14 AND values_json->>4='••••••'")
             con.execute("UPDATE jy_records SET values_json=jsonb_set(values_json,'{8}','\"不允许\"'::jsonb),version=version+1 WHERE table_id=14 AND values_json->>8='禁止'")
             prices=con.execute('SELECT * FROM jy_records WHERE table_id=10 ORDER BY created_at,id').fetchall()
             maximum=max([int(r['values_json'][0]) for r in prices if str(r['values_json'][0]).isdigit()]+[0])
@@ -158,6 +160,8 @@ class Store:
             uid = uuid.uuid4()
             con.execute('INSERT INTO jy_users(id,username,name,password_hash,role_ids,must_change_password) VALUES(%s,%s,%s,%s,%s,true)',
                         (uid, username, name, PASSWORDS.hash(password), Jsonb([str(role['id'])])))
+            from .password_vault import seal_password
+            con.execute('UPDATE jy_users SET password_cipher=%s WHERE id=%s',(seal_password(username,password),uid))
             audit(con, {'id': uid, 'username': username}, 'user.bootstrap', record_id=str(uid), after={'username': username})
             return str(uid)
 
@@ -207,6 +211,9 @@ def is_admin(con, user):
 
 def scopes(con, user, table, action):
     if table in [5,6]:return set()
+    if action=='password_view':
+        from .password_vault import password_view_allowed
+        return {'all'} if table==14 and password_view_allowed(con,user) else set()
     roles = role_rows(con, user)
     if any(role['system_admin'] for role in roles):
         return {'all'}

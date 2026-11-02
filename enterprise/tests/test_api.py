@@ -820,7 +820,7 @@ def test_account_table_enforces_actual_node_permissions_and_never_returns_passwo
         assert secret not in response.text
         return response.json()['records'][0]
     grant=access('全部操作',password=secret);deny=access('修改','不允许')
-    assert grant['values'][4]=='••••••'
+    assert grant['values'][4]=='****'
     with store.connect() as con:
         account=con.execute("SELECT * FROM jy_users WHERE username='node-user'").fetchone()
         assert account['password_hash'].startswith('$argon2') and secret not in str(con.execute('SELECT after_json FROM jy_audit WHERE table_id=14').fetchall())
@@ -959,7 +959,7 @@ def test_access_accepts_short_empty_long_passwords_and_disallow_permissions(setu
         rid=str(uuid.uuid4());values=['','','',name,password,'文员','即时库存','查看','允许','']
         payload={'requestId':str(uuid.uuid4()),'changes':[{'id':rid,'version':0,'values':values}]}
         response=admin.post('/api/access/rows',json=payload);assert response.status_code==200,response.text
-        grant=response.json()['records'][0];assert grant['values'][4]=='••••••'
+        grant=response.json()['records'][0];assert grant['values'][4]=='****'
         assert admin.post('/api/access/rows',json=payload).json()==response.json()
         with TestClient(app) as member:
             login(member,name,password)
@@ -1108,3 +1108,60 @@ def test_financial_visibility_defaults_to_existing_view_permission(setup):
         data=reader.get('/api/tables/10');assert data.status_code==200,data.text
         assert data.json()['records'][0]['values'][6]=='3.5'
         assert reader.get('/api/auth/me').json()['user']['permissions']['10']['financial_view']==['all']
+
+
+def test_password_visibility_requires_explicit_permission_and_never_exports_secret(setup):
+    app,admin,store=setup
+    secret='Vault-test-146'
+    def access(name,node,permission,password=''):
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','',name,password,'文员','用户与权限',node,permission,'']}]})
+        assert response.status_code==200,response.text
+        return response.json()['records'][0]
+    target=access('vault-person','表标签可看','允许',secret)
+    assert admin.get('/api/access/passwords').status_code==403
+    access('admin','全部操作','允许')
+    assert admin.get('/api/access/passwords').status_code==403
+    permit=access('admin','密码是否见','允许')
+    result=admin.get('/api/access/passwords');assert result.status_code==200,result.text
+    assert result.json()['passwords']['vault-person']=={'available':True,'value':secret}
+    assert 'no-store' in result.headers['cache-control']
+    for response in [admin.get('/api/tables/14'),admin.post('/api/tables/14/authorize',json={'action':'export'})]:
+        assert response.status_code==200 and secret not in response.text
+        assert all(row['values'][4]=='****' for row in response.json()['records'])
+    with store.connect() as con:
+        account=con.execute("SELECT * FROM jy_users WHERE username='vault-person'").fetchone()
+        assert account['password_cipher'] and secret not in account['password_cipher']
+        assert secret not in str(con.execute('SELECT before_json,after_json FROM jy_audit').fetchall())
+    access('vault-person','密码是否见','允许')
+    with TestClient(app) as member:
+        login(member,'vault-person',secret)
+        assert member.get('/api/access/passwords').status_code==403
+        assert member.get('/api/tables/14').status_code==403
+    deny=permit['values'].copy();deny[4]='';deny[8]='不允许'
+    assert admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':permit['id'],'version':permit['version'],'values':deny}]}).status_code==200
+    assert admin.get('/api/access/passwords').status_code==403
+    assert admin.get('/api/auth/me').json()['user']['permissions']['14']['password_view']==[]
+
+
+def test_legacy_password_recovery_after_verified_login_and_empty_password_visibility(setup):
+    app,admin,store=setup
+    def insert(name,password,node='表标签可看'):
+        response=admin.post('/api/access/rows',json={'requestId':str(uuid.uuid4()),'changes':[{'id':str(uuid.uuid4()),'version':0,'values':['','','',name,password,'文员','用户与权限',node,'允许','']}]})
+        assert response.status_code==200,response.text
+        return response.json()['records'][0]
+    insert('admin','','密码是否见');insert('legacy-vault','Legacy-vault-146');insert('empty-vault','')
+    with store.connect(write=True) as con:con.execute("UPDATE jy_users SET password_cipher=NULL WHERE username='legacy-vault'")
+    before=admin.get('/api/access/passwords').json()['passwords']
+    assert before['legacy-vault']=={'available':False,'value':''}
+    assert before['empty-vault']=={'available':True,'value':''}
+    with TestClient(app) as member:
+        login(member,'legacy-vault','Legacy-vault-146')
+        after=admin.get('/api/access/passwords').json()['passwords']
+        assert after['legacy-vault']['value']=='Legacy-vault-146'
+        changed=member.post('/api/auth/password',json={'oldPassword':'Legacy-vault-146','newPassword':'Changed-vault-146'})
+        assert changed.status_code==200,changed.text
+        assert admin.get('/api/access/passwords').json()['passwords']['legacy-vault']['value']=='Changed-vault-146'
+    from enterprise.password_vault import read_password
+    with store.connect() as con:
+        cipher=con.execute("SELECT password_cipher FROM jy_users WHERE username='legacy-vault'").fetchone()['password_cipher']
+        assert read_password('different-name',cipher) is None
