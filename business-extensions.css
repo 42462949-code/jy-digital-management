@@ -298,3 +298,19 @@ button.permission-disabled svg{color:inherit!important}
 
 button.permission-disabled[hidden]{display:none!important}
 .inventory-duplicate-tools:not(:has(.inventory-duplicate-warning)):has(>button.permission-disabled[hidden]){display:none}
+
+/* Permission draft column filters share the sales list arrow and popup styles. */
+.access-user-desktop .access-permission-table th .access-permission-funnel{position:absolute;right:5px;bottom:-1px;width:16px;height:16px;display:grid;place-items:center;border:0;border-radius:0;background:transparent;color:#fff;font:19px/16px Arial,sans-serif;padding:0;opacity:1;cursor:pointer;box-shadow:none;z-index:2}
+.access-user-desktop .access-permission-table th .access-permission-funnel:hover{background:transparent;color:#fff;outline:0}
+.access-user-desktop .access-permission-table th .access-permission-funnel:focus-visible{outline:1px dotted #fff;outline-offset:-1px}
+.access-user-desktop .access-permission-table th .access-permission-funnel.active{color:#ff3b3b}
+.access-permission-table tbody tr[hidden]{display:none!important}
+.access-filter-empty td{text-align:center!important;height:58px!important;color:#8798aa}
+#accessFilterSummary{font-size:11px;white-space:normal}
+#modal #accessFilterSummary button{padding:0 4px;min-height:20px;font-size:11px}
+#modal .access-permission-filter .excel-search input{height:29px;min-height:29px}
+#modal .access-permission-filter{margin:0;max-height:calc(100dvh - 16px)}
+
+#modal .access-permission-filter button.excel-command{min-height:28px;padding:5px 8px;border:0;border-radius:2px;background:#fff;color:#435568;font-size:12px;font-weight:400;box-shadow:none}
+#modal .access-permission-filter button.excel-command:hover:not(:disabled){background:#eaf3fb;color:#345d88}
+#modal .access-permission-filter button.excel-command:disabled{background:#fff;color:#b4bec7;opacity:1;cursor:default}
