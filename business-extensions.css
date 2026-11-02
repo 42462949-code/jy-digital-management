@@ -291,3 +291,10 @@ body.access-column-dragging,body.access-column-dragging *{cursor:col-resize!impo
 .production-draft-resizer{position:absolute;right:0;top:0;bottom:0;width:7px;cursor:col-resize;touch-action:none}
 .production-draft-resizer:hover,.production-draft-resizer:focus-visible{background:#ffffff55;outline:1px solid white}
 #productionDraftError{margin-top:8px;flex-shrink:0}#productionDraftError:empty{display:none}
+
+/* Permission-denied actions collapse; explicitly retained controls use a neutral gray style. */
+button.permission-disabled,button.permission-disabled:hover,button.permission-disabled:active,button.permission-disabled:focus-visible{background:#eef0f3!important;color:#969da7!important;border-color:#d3d7dd!important;box-shadow:none!important;opacity:1!important;cursor:not-allowed!important;filter:grayscale(1)}
+button.permission-disabled svg{color:inherit!important}
+
+button.permission-disabled[hidden]{display:none!important}
+.inventory-duplicate-tools:not(:has(.inventory-duplicate-warning)):has(>button.permission-disabled[hidden]){display:none}

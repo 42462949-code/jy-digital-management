@@ -1,7 +1,7 @@
 /* Inventory duplicate review and atomic voucher posting. */
 (()=>{'use strict';const B=JYBusiness,E=B.E;const types=['采购入库','生产领料','产品入库','其它入库','盘盈入库','采购退货','生产退料','销售出库','其它出库','盘亏出库'];let pending=null;
 function duplicates(){return B.inventoryDuplicates()}
-function controls(){const rows=duplicates();return '<span id="inventoryDuplicateControls" class="inventory-duplicate-tools">'+(rows.size?'<span class="inventory-duplicate-warning">发现 '+rows.size+' 行重复物品，请核对后删除</span>':'')+(window.JYAccess?.can(13,'view')===false?'':'<button type="button" class="icon-tool inventory-ledger-drilldown" '+buttonHint('下查出入库明细')+' onclick="JYInventory.drillDown()">'+uiButtonIcon('search')+'<span>下查出入库明细</span></button>')+'</span>'}
+function controls(){const rows=duplicates();return '<span id="inventoryDuplicateControls" class="inventory-duplicate-tools">'+(rows.size?'<span class="inventory-duplicate-warning">发现 '+rows.size+' 行重复物品，请核对后删除</span>':'')+('<button type="button" class="icon-tool inventory-ledger-drilldown" '+buttonHint('下查出入库明细')+' onclick="JYInventory.drillDown()">'+uiButtonIcon('search')+'<span>下查出入库明细</span></button>')+'</span>'}
 function refreshControls(){const el=document.getElementById('inventoryDuplicateControls');if(el)el.outerHTML=controls()}
 function filter(rows){return rows}
 
