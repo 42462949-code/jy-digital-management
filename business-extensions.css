@@ -204,3 +204,36 @@
  .access-user-editor .access-template-heading{margin-top:8px;font-size:12px}
  .access-user-editor .dialogfoot{margin-top:8px}
 }
+
+/* Desktop user editor: compact profile sidebar and full-height permission list. */
+#modal:has(>.access-user-desktop){width:min(1080px,calc(100vw - 24px));max-height:calc(100dvh - 24px);padding:16px;overflow:hidden}
+#modal>.access-user-desktop{display:flex;flex-direction:column;height:min(680px,calc(100dvh - 56px));min-height:0}
+.access-user-desktop h3{font-size:20px;margin:0 0 12px}
+.access-user-desktop #accessForm{display:flex;flex-direction:column;flex:1;min-height:0;max-height:none;gap:10px}
+.access-user-desktop .access-user-layout{display:grid;grid-template-columns:232px minmax(0,1fr);gap:14px;flex:1;min-height:0}
+.access-user-desktop .access-user-profile{min-width:0;min-height:0;overflow-y:auto;padding-right:10px;border-right:1px solid #d9e4ef}
+.access-user-desktop .business-entry-grid{grid-template-columns:minmax(0,1fr);gap:8px}
+.access-user-desktop .business-entry-grid>label{gap:4px;font-size:12px}
+.access-user-desktop .business-entry-grid input{height:32px;min-height:32px;font-size:14px;padding:5px 8px}
+.access-user-desktop #accessUpdateTemplate{width:100%;font-size:12px;min-height:30px;padding:5px 8px;margin-top:12px}
+.access-user-desktop .business-form-help{font-size:11px;line-height:1.5;margin:8px 0}
+.access-user-desktop .access-user-permissions{display:flex;flex-direction:column;min-height:0;min-width:0}
+.access-user-desktop .access-template-heading{margin:0;font-size:14px;min-height:22px}
+.access-user-desktop #accessTemplateCount{margin:3px 0 8px}
+.access-user-desktop .access-permission-scroll{flex:1;min-height:0;max-height:none;overflow:auto}
+.access-user-desktop .access-permission-table{table-layout:fixed;width:100%;font-size:12px;line-height:18px}
+.access-user-desktop .access-permission-table :is(th,td){padding:3px 6px;height:31px;white-space:normal;overflow-wrap:anywhere;font-size:12px;line-height:18px}
+.access-user-desktop .access-permission-table th:first-child,.access-user-desktop .access-permission-table th:last-child{width:auto}
+.access-user-desktop .access-permission-table select{display:block;height:24px;min-height:24px;width:100%;padding:1px 3px;font-size:12px;line-height:20px}
+.access-user-desktop .dialogfoot{margin:0;padding-top:8px;border-top:1px solid #d9e4ef;flex-shrink:0}
+.access-user-desktop .dialogfoot button{height:32px;min-height:32px;padding:5px 14px}
+.access-user-desktop #accessError{margin:0;font-size:12px}
+.access-department-combo{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 30px}
+.access-user-desktop .access-department-combo input{border-radius:6px 0 0 6px;min-width:0;width:100%}
+.access-department-toggle{height:32px;min-height:32px;padding:0;border-left:0;border-radius:0 6px 6px 0;display:flex;align-items:center;justify-content:center}
+.access-department-choices{position:absolute;z-index:5;top:calc(100% + 3px);left:0;right:0;max-height:160px;overflow-y:auto;background:white;border:1px solid #9abbe2;border-radius:6px;box-shadow:0 4px 12px #183e6520;padding:3px}
+.access-department-choices[hidden]{display:none}
+.access-department-choices button{display:block;width:100%;padding:6px 8px;border:0;background:white;text-align:left;font-size:13px;white-space:normal;overflow-wrap:anywhere}
+.access-department-choices button:hover,.access-department-choices button:focus-visible{background:#eaf3ff}
+.access-department-choices p{margin:4px;font-size:12px}
+@media(max-width:800px){.access-user-desktop .access-user-layout{grid-template-columns:190px minmax(0,1fr);gap:10px}.access-user-desktop .access-user-profile{padding-right:8px}}

@@ -963,3 +963,7 @@ body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tab
 body:not(.mobile-scan) .workspace:not(.management-home-page) .topbar .workspace-controls{align-self:flex-start;margin-top:1px}
 body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs{scrollbar-width:none}
 body:not(.mobile-scan) .workspace:not(.management-home-page) #topTabs .table-tabs::-webkit-scrollbar{display:none}
+
+/* Center all table headings, including tables and column lists in dialogs. */
+th{ text-align:center!important; vertical-align:middle }
+.column-option-head>span{ text-align:center!important }
