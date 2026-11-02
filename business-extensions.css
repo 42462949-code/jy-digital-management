@@ -134,3 +134,8 @@
  .access-editor .business-form-help{margin:6px 0}
  .access-editor .dialogfoot{margin-top:8px}
 }
+
+/* Default business rows are 25% shorter; wrapped content may grow naturally. */
+.workspace #grid tbody tr[data-row],.workspace #grid tbody tr[data-row]>td{height:29.25px}
+.workspace #grid .scan-review-status{height:22.5px;padding-block:0}
+.workspace.hourly-output-page .hourly-table tbody :is(th,td){height:18px;padding-block:0;line-height:14px}
