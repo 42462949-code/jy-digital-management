@@ -331,3 +331,13 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 .hourly-chart-scroll{width:100%;height:326px;overflow-x:auto;overflow-y:hidden;min-width:0;min-height:0;flex:0 0 auto}
 .workspace.hourly-output-page .hourly-chart .hourly-chart-scroll>svg{display:block;flex:none;min-width:0;max-width:none}
 @media(min-width:1000px) and (min-height:600px){html:not(.phone-device) .hourly-chart-scroll{flex:1 1 auto;height:auto}}
+
+/* Monthly report styling: taller workbook rows and a shorter chart with matching type. */
+.workspace.hourly-output-page .hourly-table thead th{height:36px;padding-top:0;padding-bottom:0;line-height:18px}
+.workspace.hourly-output-page .hourly-table tbody :is(th,td){height:27px;padding-block:0;line-height:14px}
+.workspace.hourly-output-page .hourly-chart{flex:0 0 auto!important;min-height:0!important;display:flex;flex-direction:column;overflow:hidden}
+.workspace.hourly-output-page .hourly-chart .hourly-chart-scroll{flex:1 1 auto!important;height:auto}
+.workspace.hourly-output-page .hourly-chart svg text{font-family:inherit;font-size:var(--hourly-chart-font-size,12px);font-weight:inherit}
+.workspace.hourly-output-page .hourly-chart .hourly-legend{font:inherit}
+
+@media(min-width:701px){.workspace.hourly-output-page .hourly-summary{width:50%;margin-left:auto}}
