@@ -341,3 +341,17 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 .workspace.hourly-output-page .hourly-chart .hourly-legend{font:inherit}
 
 @media(min-width:701px){.workspace.hourly-output-page .hourly-summary{width:50%;margin-left:auto}}
+
+/* Expert-reviewed report header: title above, filters left and half-width metrics right. */
+.workspace.hourly-output-page .hourly-heading{margin-bottom:8px;gap:0}
+.workspace.hourly-output-page .hourly-heading h2{font-size:20px;line-height:28px}
+.workspace.hourly-output-page .hourly-overview{display:grid;grid-template-columns:minmax(0,1fr) 50%;gap:20px;align-items:center;min-height:50px;margin-bottom:10px;flex:0 0 auto;min-width:0}
+.workspace.hourly-output-page .hourly-overview .hourly-parameters{margin:0;display:flex;align-items:center;justify-content:flex-start;gap:16px;flex-wrap:nowrap;min-width:0}
+.workspace.hourly-output-page .hourly-overview .hourly-parameters label{display:flex;align-items:center;gap:7px;font-size:13px;white-space:nowrap}
+.workspace.hourly-output-page .hourly-overview .hourly-parameters input{height:32px;min-width:0;padding:4px 8px;border-color:#c9d9ea;border-radius:6px;font-size:14px}
+.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=month]{width:156px}
+.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=number]{width:104px}
+.workspace.hourly-output-page .hourly-overview .hourly-summary{width:100%;margin:0;gap:10px;min-width:0}
+@media(max-width:1100px){.workspace.hourly-output-page .hourly-overview{gap:16px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{gap:12px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=month]{width:150px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=number]{width:96px}}
+@media(max-width:900px){.workspace.hourly-output-page .hourly-overview{grid-template-columns:minmax(0,1fr);gap:10px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{flex-wrap:wrap}.workspace.hourly-output-page .hourly-overview .hourly-summary{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:600px){.workspace.hourly-output-page .hourly-heading h2{font-size:18px;line-height:26px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px}.workspace.hourly-output-page .hourly-overview .hourly-parameters label{flex-direction:column;align-items:stretch;gap:4px;font-size:12px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type]{width:100%}.workspace.hourly-output-page .hourly-overview .hourly-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
