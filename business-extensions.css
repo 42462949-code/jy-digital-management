@@ -323,4 +323,4 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 /* Company branding uses text without a graphic logo. */
 .company-brand-name{display:block;color:#151515;font-size:clamp(18px,2.8vw,30px);font-weight:700;line-height:1.4;overflow-wrap:anywhere}
 .wo-company-name{position:absolute;left:0;top:0;max-width:38mm;color:#000;font-size:9pt;line-height:1.4;text-align:left}
-@media(max-width:700px){.management-company-name{max-width:calc(100% - 24px)}}
+
