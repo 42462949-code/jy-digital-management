@@ -324,3 +324,10 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 .company-brand-name{display:block;color:#151515;font-size:clamp(18px,2.8vw,30px);font-weight:700;line-height:1.4;overflow-wrap:anywhere}
 .wo-company-name{position:absolute;left:0;top:0;max-width:38mm;color:#000;font-size:9pt;line-height:1.4;text-align:left}
 
+
+/* The chart uses the same day coordinates and horizontal scroll as the workbook. */
+.workspace.hourly-output-page .hourly-chart{padding-left:0!important;padding-right:0!important}
+.workspace.hourly-output-page .hourly-chart .hourly-legend{padding:0 12px}
+.hourly-chart-scroll{width:100%;height:326px;overflow-x:auto;overflow-y:hidden;min-width:0;min-height:0;flex:0 0 auto}
+.workspace.hourly-output-page .hourly-chart .hourly-chart-scroll>svg{display:block;flex:none;min-width:0;max-width:none}
+@media(min-width:1000px) and (min-height:600px){html:not(.phone-device) .hourly-chart-scroll{flex:1 1 auto;height:auto}}
