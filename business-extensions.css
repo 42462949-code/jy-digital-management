@@ -318,3 +318,9 @@ button.permission-disabled[hidden]{display:none!important}
 /* Account switching sits immediately before the existing red exit button. */
 .workspace .workspace-controls>.workspace-switch-user{height:24px;min-height:24px;width:auto;flex:0 0 auto;padding:2px 8px;font-size:12px;line-height:18px;white-space:nowrap}
 body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36px;min-height:36px;padding:6px 9px}
+
+/* Square company icon retains its aspect ratio in login and introduction headers. */
+#modal .login-card .company-logo{width:48px;height:48px;flex:0 0 48px}
+#modal .login-card .company-logo img{width:100%;height:100%;object-fit:contain}
+.management-company-name>img{width:44px;height:44px;max-width:44px;object-fit:contain}
+@media(max-width:700px){.management-company-name>img{width:34px;height:34px;max-width:34px}}

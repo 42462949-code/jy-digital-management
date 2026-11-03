@@ -17,7 +17,7 @@ const qrCache=new Map();
 function rowQR(row,doc=draft){const value=rowQRValue(row,doc);if(qrCache.has(value))return qrCache.get(value);const qr=window.JYQR.create(value,{errorCorrectionLevel:'M'}),size=qr.modules.size,paths=[];for(let y=0;y<size;y++)for(let x=0;x<size;x++)if(qr.modules.data[y*size+x])paths.push(`M${x+4},${y+4}h1v1h-1z`);const svg=`<svg xmlns="http://www.w3.org/2000/svg" class="wo-order-qr" viewBox="0 0 ${size+8} ${size+8}" shape-rendering="crispEdges" role="img" aria-label="${E(value)}"><rect width="100%" height="100%" fill="white"/><path d="${paths.join('')}" fill="black"/></svg>`;qrCache.set(value,svg);return svg}
 function reportColumnSettings(){const saved=jyStorage.getJSON(reportWidthsKey,[]);return reportColumns.map(([n,w])=>{const prior=Array.isArray(saved)?saved.find(c=>c.n===n):null;return {n,w:prior&&Number.isFinite(prior.w)&&prior.w>0?prior.w:w,show:true,align:reportColumns.find(c=>c[0]===n)[4]}})}
 function reportHeader(name){const column=reportColumns.find(c=>c[0]===name);return column?(column[2]?E(column[2])+'<br>':'')+E(column[3]):E(name)}
-function reportLogo(){return '<img class="wo-company-logo" src="'+E(new URL('company-icon.svg',location.href).href)+'" alt="佳洋 Jiayang 公司标志">'}
+function reportLogo(){return '<img class="wo-company-logo" src="'+E(new URL('company-icon.svg?v=20261103-companylogo169',location.href).href)+'" alt="佳洋 Jiayang 公司标志">'}
 function machineHTML(doc=draft){return '<b>Máy sản xuất生产机台：</b><span class="wo-machine-value" data-business-text>'+E(meta(doc).group)+'</span>'}
 function dateHTML(doc=draft){return 'Ngày lập lệnh 下单日期： <span data-business-text>'+E(doc.createdAt)+'</span>'}
 function groups(){return [...new Set(api().groups().map(v=>String(v??'').trim()).filter(Boolean))]}
