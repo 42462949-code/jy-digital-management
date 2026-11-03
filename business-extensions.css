@@ -319,8 +319,8 @@ button.permission-disabled[hidden]{display:none!important}
 .workspace .workspace-controls>.workspace-switch-user{height:24px;min-height:24px;width:auto;flex:0 0 auto;padding:2px 8px;font-size:12px;line-height:18px;white-space:nowrap}
 body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36px;min-height:36px;padding:6px 9px}
 
-/* Square company icon retains its aspect ratio in login and introduction headers. */
-#modal .login-card .company-logo{width:48px;height:48px;flex:0 0 48px}
-#modal .login-card .company-logo img{width:100%;height:100%;object-fit:contain}
-.management-company-name>img{width:44px;height:44px;max-width:44px;object-fit:contain}
-@media(max-width:700px){.management-company-name>img{width:34px;height:34px;max-width:34px}}
+
+/* Company branding uses text without a graphic logo. */
+.company-brand-name{display:block;color:#151515;font-size:clamp(18px,2.8vw,30px);font-weight:700;line-height:1.4;overflow-wrap:anywhere}
+.wo-company-name{position:absolute;left:0;top:0;max-width:38mm;color:#000;font-size:9pt;line-height:1.4;text-align:left}
+@media(max-width:700px){.management-company-name{max-width:calc(100% - 24px)}}
