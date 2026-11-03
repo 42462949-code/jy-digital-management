@@ -314,3 +314,7 @@ button.permission-disabled[hidden]{display:none!important}
 #modal .access-permission-filter button.excel-command{min-height:28px;padding:5px 8px;border:0;border-radius:2px;background:#fff;color:#435568;font-size:12px;font-weight:400;box-shadow:none}
 #modal .access-permission-filter button.excel-command:hover:not(:disabled){background:#eaf3fb;color:#345d88}
 #modal .access-permission-filter button.excel-command:disabled{background:#fff;color:#b4bec7;opacity:1;cursor:default}
+
+/* Account switching sits immediately before the existing red exit button. */
+.workspace .workspace-controls>.workspace-switch-user{height:24px;min-height:24px;width:auto;flex:0 0 auto;padding:2px 8px;font-size:12px;line-height:18px;white-space:nowrap}
+body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36px;min-height:36px;padding:6px 9px}
