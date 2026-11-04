@@ -450,3 +450,6 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
  .workspace.hourly-output-page .hourly-notes-grid h4+p{display:inline}
  .workspace.hourly-output-page .hourly-notes-grid p+p{margin-top:2px}
 }
+
+.workspace.hourly-output-page .hourly-unit-note{color:#55758d;font-size:12px;line-height:18px;white-space:nowrap}
+@media(max-width:600px){.workspace.hourly-output-page .hourly-unit-note{grid-column:1/-1;font-size:12px}}
