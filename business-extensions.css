@@ -395,3 +395,40 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 @media(max-width:600px){.workspace.hourly-output-page .hourly-notes-grid{grid-template-columns:minmax(0,1fr);gap:10px}.workspace.hourly-output-page .hourly-notes-grid section:last-child{grid-column:auto}}
 
 @media(min-width:1000px) and (min-height:600px) and (max-height:740px){.workspace.hourly-output-page .hourly-chart{padding-block:6px}.workspace.hourly-output-page .hourly-chart .hourly-legend{margin-bottom:4px}}
+
+/* Expert-reviewed definitions: a formula strip and two readable text columns directly after the chart. */
+.workspace.hourly-output-page .hourly-notes{margin-top:10px;padding:12px 14px;background:#fff;border-color:#d5e3ee;color:#526b80}
+.workspace.hourly-output-page .hourly-notes-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:9px;margin-bottom:10px;border-bottom:1px solid #e8eff5}
+.workspace.hourly-output-page .hourly-notes-heading h3{margin:0;flex:0 0 auto;font-size:13px;line-height:20px}
+.workspace.hourly-output-page .hourly-formula{display:flex;align-items:center;gap:10px;padding:4px 10px;border-radius:5px;background:#f1f7fd}
+.workspace.hourly-output-page .hourly-formula h4{margin:0;font-size:11px;line-height:18px;white-space:nowrap;color:#607b93}
+.workspace.hourly-output-page .hourly-formula p{font-size:12px;line-height:18px;font-weight:600;color:#315f87}
+.workspace.hourly-output-page .hourly-notes-grid{grid-template-columns:minmax(0,1fr) minmax(0,2.2fr);gap:24px}
+.workspace.hourly-output-page .hourly-notes-grid section+section{border-left:1px solid #e8eff5;padding-left:24px;grid-column:auto}
+.workspace.hourly-output-page .hourly-notes-grid h4{margin:0 0 5px;font-size:12px;line-height:18px}
+.workspace.hourly-output-page .hourly-notes-grid p{font-size:12px;line-height:18px}
+.workspace.hourly-output-page .hourly-notes-grid p+p{margin-top:4px}
+@media(min-width:1000px) and (min-height:600px){html:not(.phone-device) .workspace.hourly-output-page #hourlyData{flex:0 0 auto}}
+@media(min-width:1000px) and (min-height:600px) and (max-height:740px){
+ .workspace.hourly-output-page .hourly-notes{padding:8px 10px;margin-top:7px}
+ .workspace.hourly-output-page .hourly-notes-heading{padding-bottom:5px;margin-bottom:6px;gap:8px}
+ .workspace.hourly-output-page .hourly-notes-heading h3{font-size:12px;line-height:18px}
+ .workspace.hourly-output-page .hourly-formula{padding:2px 8px;gap:8px}
+ .workspace.hourly-output-page .hourly-formula p{font-size:11px;line-height:16px}
+ .workspace.hourly-output-page .hourly-notes-grid{gap:16px}
+ .workspace.hourly-output-page .hourly-notes-grid section+section{padding-left:16px}
+ .workspace.hourly-output-page .hourly-notes-grid h4{font-size:11px;line-height:16px;margin-bottom:3px}
+ .workspace.hourly-output-page .hourly-notes-grid p{font-size:11px;line-height:15.5px}
+ .workspace.hourly-output-page .hourly-notes-grid p+p{margin-top:3px}
+}
+@media(max-width:999px){.workspace.hourly-output-page .hourly-notes-heading{align-items:flex-start;flex-direction:column;gap:6px}.workspace.hourly-output-page .hourly-notes-grid{grid-template-columns:minmax(0,1fr) minmax(0,2.2fr)}}
+@media(max-width:600px){.workspace.hourly-output-page .hourly-notes-grid{grid-template-columns:minmax(0,1fr);gap:12px}.workspace.hourly-output-page .hourly-notes-grid section+section{padding:10px 0 0;border-left:0;border-top:1px solid #e8eff5}.workspace.hourly-output-page .hourly-formula{flex-wrap:wrap;gap:2px 8px}.workspace.hourly-output-page .hourly-notes{padding:10px 12px}}
+@media(min-width:1000px) and (min-height:600px) and (max-height:640px){
+ .workspace.hourly-output-page .hourly-notes{padding:4px 10px}
+ .workspace.hourly-output-page .hourly-notes-heading{padding-bottom:2px;margin-bottom:2px}
+ .workspace.hourly-output-page .hourly-notes-grid{grid-template-columns:minmax(0,1fr) minmax(0,2.7fr)}
+ .workspace.hourly-output-page .hourly-notes-grid h4{margin-bottom:1px}
+ .workspace.hourly-output-page .hourly-notes-grid p+p{margin-top:1px}
+}
+
+@media(min-width:1000px) and (min-height:600px) and (max-height:640px){.workspace.hourly-output-page .hourly-chart{padding-block:4px}.workspace.hourly-output-page .hourly-chart .hourly-legend{margin-bottom:2px}}
