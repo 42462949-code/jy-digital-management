@@ -355,3 +355,16 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 @media(max-width:1100px){.workspace.hourly-output-page .hourly-overview{gap:16px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{gap:12px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=month]{width:150px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type=number]{width:96px}}
 @media(max-width:900px){.workspace.hourly-output-page .hourly-overview{grid-template-columns:minmax(0,1fr);gap:10px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{flex-wrap:wrap}.workspace.hourly-output-page .hourly-overview .hourly-summary{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:600px){.workspace.hourly-output-page .hourly-heading h2{font-size:18px;line-height:26px}.workspace.hourly-output-page .hourly-overview .hourly-parameters{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px}.workspace.hourly-output-page .hourly-overview .hourly-parameters label{flex-direction:column;align-items:stretch;gap:4px;font-size:12px}.workspace.hourly-output-page .hourly-overview .hourly-parameters input[type]{width:100%}.workspace.hourly-output-page .hourly-overview .hourly-summary{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}}
+
+/* Login identity and opt-in remembered local sign-in. */
+#modal.login-dialog .login-card .login-brand{position:relative;min-height:60px;flex-direction:row;align-items:flex-start;justify-content:center;gap:12px}
+#modal.login-dialog .login-company-mark{display:block;position:relative;width:62px;height:49px;flex:0 0 62px;overflow:hidden}
+#modal.login-dialog .login-company-mark img{display:block;width:137px;height:54px;max-width:none;position:absolute;left:-6px;top:-3px;object-fit:fill}
+#modal.login-dialog .login-brand h2{padding-top:3px}
+#modal.login-dialog .login-options{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#modal.login-dialog .login-account-options{display:flex;align-items:center;gap:14px;margin-left:auto}
+#modal.login-dialog .login-auto{display:inline-flex;align-items:center;gap:5px;margin:0;font-size:12px;line-height:20px;white-space:nowrap;color:#52729a;cursor:pointer}
+#modal.login-dialog .login-auto input{width:14px;height:14px;margin:0;padding:0;accent-color:#2365c6;flex:0 0 auto;cursor:pointer}
+#modal.login-dialog .login-auto input:focus-visible{outline:2px solid #27b5ce;outline-offset:3px}
+@media(max-width:420px){#modal.login-dialog .login-card .login-brand{gap:8px}#modal.login-dialog .login-company-mark{width:48px;height:42px;flex-basis:48px}#modal.login-dialog .login-company-mark img{width:111px;height:44px;left:-6px;top:-2px}#modal.login-dialog .login-card .login-brand h2{font-size:22px;letter-spacing:0}}
+@media(max-width:360px){#modal.login-dialog .login-card .login-brand h2{font-size:20px}#modal.login-dialog .login-card .login-brand{gap:6px}}
