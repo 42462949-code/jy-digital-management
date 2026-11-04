@@ -368,3 +368,6 @@ body.mobile-scan .workspace .workspace-controls>.workspace-switch-user{height:36
 #modal.login-dialog .login-auto input:focus-visible{outline:2px solid #27b5ce;outline-offset:3px}
 @media(max-width:420px){#modal.login-dialog .login-card .login-brand{gap:8px}#modal.login-dialog .login-company-mark{width:48px;height:42px;flex-basis:48px}#modal.login-dialog .login-company-mark img{width:111px;height:44px;left:-6px;top:-2px}#modal.login-dialog .login-card .login-brand h2{font-size:22px;letter-spacing:0}}
 @media(max-width:360px){#modal.login-dialog .login-card .login-brand h2{font-size:20px}#modal.login-dialog .login-card .login-brand{gap:6px}}
+
+/* Keep the summary beside the filters, leaving the remaining space to the right. */
+@media(min-width:901px){.workspace.hourly-output-page .hourly-overview{grid-template-columns:max-content minmax(0,50%);justify-content:start}}
